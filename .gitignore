@@ -1,0 +1,9 @@
+# Xcode 個人設定
+xcuserdata/
+*.xcuserstate
+
+# ブレークポイント
+*.xcbkptlist
+
+# macOS
+.DS_Store

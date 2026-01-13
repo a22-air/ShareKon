@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2AE5B0932F16637D00376ED6 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 2AE5B0922F16637D00376ED6 /* .gitignore */; };
 		96F41B822E4E9959003A6D2A /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 96F41B812E4E9959003A6D2A /* FirebaseAnalytics */; };
 		96F41B842E4E9959003A6D2A /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 96F41B832E4E9959003A6D2A /* FirebaseAuth */; };
 		96F41B862E4E9959003A6D2A /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 96F41B852E4E9959003A6D2A /* FirebaseFirestore */; };
@@ -30,6 +31,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2AE5B0922F16637D00376ED6 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		96F41B2C2E4360F6003A6D2A /* ShareKon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShareKon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96F41B3D2E4360FA003A6D2A /* ShareKonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShareKonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96F41B472E4360FD003A6D2A /* ShareKonUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShareKonUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -84,6 +86,7 @@
 		96F41B232E4360F6003A6D2A = {
 			isa = PBXGroup;
 			children = (
+				2AE5B0922F16637D00376ED6 /* .gitignore */,
 				96F41B2E2E4360F6003A6D2A /* ShareKon */,
 				96F41B402E4360FD003A6D2A /* ShareKonTests */,
 				96F41B4A2E4360FD003A6D2A /* ShareKonUITests */,
@@ -227,6 +230,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2AE5B0932F16637D00376ED6 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
