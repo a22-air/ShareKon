@@ -11,45 +11,48 @@ struct CommonSelectView<Destination: View>: View {
     @Binding var items: [String]
     @Binding var selectedItem: String?
     let destination: Destination
-    
+
     var body: some View {
-        HStack {
-            NavigationLink(destination: destination) {
-                Picker(
-                    selection: Binding(
-                        get: { selectedItem ?? items.first ?? "" },
-                        set: { selectedItem = $0 }
-                    ),
-                    label: Text(selectedItem ?? items.first ?? "")
-                        .foregroundColor(
-                            (selectedItem == "カテゴリーを追加してください")
-                            ? .red
-                            : .primary
-                        )
-                ) {
-                    ForEach(items, id: \.self) { item in
-                        Text(item).tag(item)
-                    }
-                }
-                .pickerStyle(MenuPickerStyle())
-                .onAppear {
-                    if selectedItem == nil {
-                        selectedItem = items.first
-                    }
-                }
-                .padding(.trailing, 16)
+        NavigationLink(destination: destination) {
+            HStack {
+                Text(selectedItem ?? items.first ?? "カテゴリーを追加してください")
+                    .foregroundColor(
+                        (selectedItem == "カテゴリーを追加してください")
+                        ? .red
+                        : .primary
+                    )
+
+                Spacer()
             }
+            .padding(.horizontal)
         }
         .buttonStyle(.plain)
+        .onAppear {
+            if selectedItem == nil {
+                selectedItem = items.first
+            }
+        }
     }
 }
- 
 #Preview {
-    CommonSelectView<Text>(
-        title: "例",
-        items: .constant(["A", "B"]),
-        selectedItem: .constant("AA"),
-        destination: Text("遷移先")
-    )
+    CommonSelectViewPreviewWrapper()
 }
- 
+
+struct CommonSelectViewPreviewWrapper: View {
+    @State var items: [String] = ["食費", "交通費", "娯楽費"]
+    @State var selectedItem: String? = "食費"
+
+    var body: some View {
+        NavigationStack {
+            CommonSelectView(
+                items: $items,
+                selectedItem: $selectedItem,
+                destination: CategoryView(
+                    categories: $items,
+                    selectedCategory: $selectedItem
+                )
+            )
+        }
+    }
+}
+
