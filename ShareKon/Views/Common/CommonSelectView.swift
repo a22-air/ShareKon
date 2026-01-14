@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct CommonSelectView<Destination: View>: View {
-    let title: String
     @Binding var items: [String]
     @Binding var selectedItem: String?
     let destination: Destination

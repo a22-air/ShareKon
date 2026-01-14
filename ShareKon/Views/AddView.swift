@@ -66,8 +66,6 @@ struct AddView: View {
                     // 登録ユーザーがない場合
                     // 空の場合はダミーの selectedItem を作る
                     CommonSelectView(
-                        title: "カテゴリ",
-                        
                         items: $categoryModel.categoryList,
                         
                         // selectedItem にはダミーの Binding を渡す
@@ -81,7 +79,7 @@ struct AddView: View {
                 } else {
                     // カテゴリ選択
                     CommonSelectView(
-                        title: "カテゴリ",
+//                        title: "カテゴリ",
                         items: $categoryModel.categoryList,
                         selectedItem: $selectedCategory,
                         destination: CategoryView(categories: $categoryModel.categoryList, selectedCategory: $selectedCategory)
