@@ -51,10 +51,6 @@ struct ContentView: View {
                     TotalSummaryView(items: tabItems)
                 }
             }
-            .onAppear {
-                guard !ProcessInfo.isPreview else { return }
-                viewModel.listenItems()
-            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -82,6 +78,8 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            guard !ProcessInfo.isPreview else { return }
+            viewModel.listenItems()
             DispatchQueue.main.async {
                 selectedTab = 2
             }
