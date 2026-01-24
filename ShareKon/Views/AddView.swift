@@ -62,17 +62,17 @@ struct AddView: View {
         NavigationView{
             
             List{
-                if categoryModel.categoryList.isEmpty {
+                if viewModel.category.categoryList.isEmpty {
                     // 登録ユーザーがない場合
                     // 空の場合はダミーの selectedItem を作る
                     CommonSelectView(
-                        items: $categoryModel.categoryList,
+                        items: $viewModel.category.categoryList,
                         
                         // selectedItem にはダミーの Binding を渡す
                         selectedItem: Binding.constant("カテゴリーを追加してください"),
                         
                         destination: CategoryView(
-                            categories: $categoryModel.categoryList,
+                            categories: $viewModel.category.categoryList,
                             selectedCategory: $selectedCategory
                         )
                     )
@@ -80,9 +80,9 @@ struct AddView: View {
                     // カテゴリ選択
                     CommonSelectView(
 //                        title: "カテゴリ",
-                        items: $categoryModel.categoryList,
+                        items: $viewModel.category.categoryList,
                         selectedItem: $selectedCategory,
-                        destination: CategoryView(categories: $categoryModel.categoryList, selectedCategory: $selectedCategory)
+                        destination: CategoryView(categories: $viewModel.category.categoryList, selectedCategory: $selectedCategory)
                     )
                 }
                 // カレンダー表示
@@ -103,18 +103,18 @@ struct AddView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     
                     NavigationLink(destination:
-                                    SelectUserView(users: $categoryModel.users, selectedUser: $selectedUser)
+                                    SelectUserView(users: $viewModel.category.users, selectedUser: $selectedUser)
                         .environmentObject(categoryModel)
                     ) {
                         
-                        if categoryModel.users.isEmpty {
+                        if viewModel.category.users.isEmpty {
                             // 登録ユーザーがない場合
                             Text("ユーザーを追加してください")
                                 .foregroundColor(.red)
                         } else {
                             // 登録ユーザーがある場合
                             VStack(alignment: .leading, spacing: 8) {
-                                ForEach(categoryModel.users, id: \.self) { user in
+                                ForEach(viewModel.category.users, id: \.self) { user in
                                     HStack {
                                         CustomCheckBox(
                                             isChecked: Binding(
