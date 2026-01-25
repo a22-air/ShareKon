@@ -77,7 +77,6 @@ struct AddView: View {
                 } else {
                     // カテゴリ選択
                     CommonSelectView(
-//                        title: "カテゴリ",
                         items: $viewModel.category.categoryList,
                         selectedItem: $selectedCategory,
                         destination: CategoryView(categories: $viewModel.category.categoryList, selectedCategory: $selectedCategory)
