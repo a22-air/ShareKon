@@ -20,11 +20,12 @@ struct SplitView: View {
     @State private var showPaid = false // 精算済み
     @State private var showUnpaid = false // 未精算
     @Binding var selectedTab: Int
+    @State private var isCalculating = false
     var category: CategoryModel //どのカテゴリかRecognize
     private var categoryItems: [ExpenseItem] {
         viewModel.category.items
     }
-
+    
     var body: some View {
         ScrollView { // ← 追加
             VStack(spacing: 24) {
@@ -42,14 +43,14 @@ struct SplitView: View {
                         .onChange(of: assistanceText) { oldValue, newValue in
                             // 数字以外を削除
                             let filtered = newValue.filter { "0123456789".contains($0) }
-
+                            
                             if filtered != newValue {
                                 assistanceText = filtered
                             }
-
+                            
                             assistanceAmount = Int(filtered) ?? 0
                         }
-  
+                    
                     Text("割り勘比率")
                         .font(.headline)
                     
@@ -72,14 +73,19 @@ struct SplitView: View {
                         }
                     }
                     Button("計算する") {
-                        displayedAssistanceAmount = assistanceAmount
+                        isCalculating = true
                         
-                        // 援助金を差し引いた割り勘金額で再計算
-                        calculatedDistributed = [
-                            "total": distribute(amount: total - displayedAssistanceAmount, ratios: normalizedRatios),
-                            "paid": distribute(amount: paidTotal - displayedAssistanceAmount, ratios: normalizedRatios),
-                            "unpaid": distribute(amount: unpaidTotal - displayedAssistanceAmount, ratios: normalizedRatios)
-                        ]
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            displayedAssistanceAmount = assistanceAmount
+                            
+                            calculatedDistributed = [
+                                "total": distribute(amount: total - displayedAssistanceAmount, ratios: normalizedRatios),
+                                "paid": distribute(amount: paidTotal - displayedAssistanceAmount, ratios: normalizedRatios),
+                                "unpaid": distribute(amount: unpaidTotal - displayedAssistanceAmount, ratios: normalizedRatios)
+                            ]
+                            
+                            isCalculating = false
+                        }
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -92,7 +98,7 @@ struct SplitView: View {
                 .cornerRadius(12)
                 .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                 .padding(.horizontal)
-        
+                
                 // --- カード②〜：結果表示 ---
                 VStack(alignment: .leading, spacing: 16) {
                     
@@ -145,7 +151,32 @@ struct SplitView: View {
                     "unpaid": distribute(amount: unpaidTotal, ratios: normalizedRatios)
                 ]
             }
+            
+            
         }
+        .overlay {
+            if isCalculating {
+                ZStack {
+                    Color.black.opacity(0.55)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        
+                        Text("計算中...")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                    }
+                    .padding(28)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(16)
+                    .shadow(radius: 10)
+                }
+            }
+        }
+        .disabled(isCalculating)
+        
     }
     
     // MARK: - Helpers
@@ -302,25 +333,25 @@ private struct CategorySplitView: View {
             
             HStack {
                 Text(title)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                Spacer()
+                
+                if displayedAssistanceAmount > 0 {
+                    Text("¥\(totalAmount + displayedAssistanceAmount) - ")
                         .font(.headline)
-                        .fontWeight(.bold)
-                    Spacer()
-                    
-                    if displayedAssistanceAmount > 0 {
-                        Text("¥\(totalAmount + displayedAssistanceAmount) - ")
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                        + Text("¥\(displayedAssistanceAmount)")
-                            .font(.headline)
-                            .foregroundColor(.red) // 援助金を赤色
-                        + Text(" = ¥\(totalAmount)")
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                    } else {
-                        Text("¥\(totalAmount)")
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                    }
+                        .foregroundColor(.blue)
+                    + Text("¥\(displayedAssistanceAmount)")
+                        .font(.headline)
+                        .foregroundColor(.red) // 援助金を赤色
+                    + Text(" = ¥\(totalAmount)")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                } else {
+                    Text("¥\(totalAmount)")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                }
             }
             
             ForEach(users, id: \.self) { user in
@@ -344,18 +375,18 @@ private struct CategorySplitView: View {
 
 #Preview {
     @Previewable @State var previewSelectedCategory: String? = "旅行"
-
-        let sampleCategory = CategoryModel(
-            name: "旅行",
-            users: ["Airi", "Taro", "Hanako"],
-            iconName: "foleder.fill"
-        )
+    
+    let sampleCategory = CategoryModel(
+        name: "旅行",
+        users: ["Airi", "Taro", "Hanako"],
+        iconName: "foleder.fill"
+    )
     // ViewModel を作成
-        let sampleViewModel = CategoryViewModel(category: sampleCategory)
+    let sampleViewModel = CategoryViewModel(category: sampleCategory)
     SplitView(
         viewModel: sampleViewModel,
         selectedTab: .constant(3),
         category: sampleCategory
     )
-        .environmentObject(ExpenseData())
+    .environmentObject(ExpenseData())
 }
