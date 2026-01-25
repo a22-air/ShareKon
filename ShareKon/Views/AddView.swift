@@ -54,8 +54,6 @@ struct AddView: View {
     )
     // 編集する場合の ExpenseItem
     var editingItem: ExpenseItem?
-    // 大カテゴリとユーザ名と中カテゴリのリスト
-    @ObservedObject var categoryModel: CategoryModel
     
     var body: some View {
         
@@ -104,7 +102,6 @@ struct AddView: View {
                     
                     NavigationLink(destination:
                                     SelectUserView(users: $viewModel.category.users, selectedUser: $selectedUser)
-                        .environmentObject(categoryModel)
                     ) {
                         
                         if viewModel.category.users.isEmpty {
@@ -371,7 +368,6 @@ struct AddView: View {
     let sampleViewModel = CategoryViewModel(category: sampleCategory)
     
     AddView(
-        viewModel: sampleViewModel,
-        categoryModel: sampleCategory
+        viewModel: sampleViewModel
     )
 }
