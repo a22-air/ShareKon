@@ -13,7 +13,8 @@ struct ExpenseItem: Identifiable {
     var totalAmount: Int
     var userAmounts: [String: Int]
     var isPaid: Bool = false
-
+    var createdAt: Date? // 登録順を安定させるために作成
+    
     // Firestore から復元する用イニシャライザ
     init(
         id: String,
@@ -21,7 +22,8 @@ struct ExpenseItem: Identifiable {
         date: Date,
         totalAmount: Int,
         userAmounts: [String: Int],
-        isPaid: Bool = false
+        isPaid: Bool = false,
+        createdAt: Date? = nil
     ) {
         self.id = id
         self.category = category
@@ -29,6 +31,7 @@ struct ExpenseItem: Identifiable {
         self.totalAmount = totalAmount
         self.userAmounts = userAmounts
         self.isPaid = isPaid
+        self.createdAt = createdAt
     }
 
     // 新規作成用イニシャライザ
@@ -37,7 +40,8 @@ struct ExpenseItem: Identifiable {
         date: Date,
         totalAmount: Int,
         userAmounts: [String: Int],
-        isPaid: Bool = false
+        isPaid: Bool = false,
+        createdAt: Date? = nil
     ) {
         self.id = UUID().uuidString
         self.category = category
@@ -45,5 +49,6 @@ struct ExpenseItem: Identifiable {
         self.totalAmount = totalAmount
         self.userAmounts = userAmounts
         self.isPaid = isPaid
+        self.createdAt = createdAt
     }
 }

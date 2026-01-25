@@ -45,8 +45,9 @@ class CategoryViewModel: ObservableObject {
                 "date": Timestamp(date: item.date),
                 "totalAmount": item.totalAmount,
                 "userAmounts": item.userAmounts,
-                "isPaid": item.isPaid
-            ])
+                "isPaid": item.isPaid,
+                "createdAt": FieldValue.serverTimestamp()
+            ], merge: true)
     }
     
     // Firestore からリアルタイムで ExpenseItem を取得
@@ -56,18 +57,34 @@ class CategoryViewModel: ObservableObject {
             .collection("items")
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let docs = snapshot?.documents else { return }
+                
                 let items = docs.map { doc -> ExpenseItem in
                     let data = doc.data()
+                    let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
+                    
                     return ExpenseItem(
                         id: doc.documentID,
                         category: data["category"] as? String ?? "",
                         date: (data["date"] as? Timestamp)?.dateValue() ?? Date(),
                         totalAmount: data["totalAmount"] as? Int ?? 0,
                         userAmounts: data["userAmounts"] as? [String: Int] ?? [:],
-                        isPaid: data["isPaid"] as? Bool ?? false
+                        isPaid: data["isPaid"] as? Bool ?? false,
+                        createdAt: createdAt
                     )
                 }
-                self?.category.items = items
+                
+                // 並び順を安定させる
+                let sortedItems = items.sorted {
+                    if $0.date != $1.date {
+                        return $0.date < $1.date
+                    } else {
+                        return ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast)
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    self?.category.items = sortedItems
+                }
             }
     }
     
