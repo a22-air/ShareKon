@@ -16,6 +16,7 @@ struct SplitView: View {
     @State private var calculatedDistributed: [String: [String: Int]]? = nil
     @State private var displayedAssistanceAmount: Int = 0
     @State private var assistanceText: String = ""
+    @FocusState private var isFocused: Bool
     // 折りたたみ制御用
     @State private var showPaid = false // 精算済み
     @State private var showUnpaid = false // 未精算
@@ -27,7 +28,7 @@ struct SplitView: View {
     }
     
     var body: some View {
-        ScrollView { // ← 追加
+        ScrollView {
             VStack(spacing: 24) {
                 
                 // --- カード①: 入力フォーム ---
@@ -38,6 +39,7 @@ struct SplitView: View {
                     
                     TextField("¥0", text: $assistanceText)
                         .keyboardType(.numberPad)
+                        .focused($isFocused)
                         .multilineTextAlignment(.trailing)
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: assistanceText) { oldValue, newValue in
@@ -69,6 +71,7 @@ struct SplitView: View {
                             )
                             .textFieldStyle(.roundedBorder)
                             .keyboardType(.numberPad)
+                            .focused($isFocused)
                             .multilineTextAlignment(.trailing)
                         }
                     }
@@ -153,6 +156,14 @@ struct SplitView: View {
             }
             
             
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("完了") {
+                    isFocused = false
+                }
+            }
         }
         .overlay {
             if isCalculating {
