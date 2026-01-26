@@ -91,9 +91,7 @@ struct AddView: View {
                     displayedComponents: [.date]
                 ) {
                     // ラベルに表示する文字列
-                    Text(
-                        (date).formatted(style) // date が nil なら today を表示
-                    )
+                    Text("日付")
                 }
                 .environment(\.locale, Locale(identifier: "ja_JP"))
                 
