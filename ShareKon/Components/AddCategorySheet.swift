@@ -12,6 +12,7 @@ struct AddCategorySheet: View {
     @Binding var newUserName: String
     @Binding var userNames: [String]
     @Binding var selectedIcon: String
+    @FocusState private var isFocused: Bool
     let onSave: () -> Void
     let onClose: () -> Void
     let columns = [
@@ -40,6 +41,7 @@ struct AddCategorySheet: View {
                     .font(.subheadline)
                 TextField("例: 結婚式", text: $newCategoryName)
                     .textFieldStyle(.roundedBorder)
+                    .focused($isFocused)
             }
             
             VStack(alignment: .leading, spacing: 8) {
@@ -49,7 +51,7 @@ struct AddCategorySheet: View {
                 HStack {
                     TextField("名前", text: $newUserName)
                         .textFieldStyle(.roundedBorder)
-                    
+                        .focused($isFocused)
                     Button("名前追加") {
                         let trimmed = newUserName.trimmingCharacters(in: .whitespaces)
                         guard !trimmed.isEmpty else { return }
@@ -127,6 +129,10 @@ struct AddCategorySheet: View {
                 .padding(.top, 10)
         }
         .padding()
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isFocused = false
+        }
     }
 }
 
