@@ -15,7 +15,7 @@ struct CommonAddLayout: View {
     @Binding var selectedItem: String? // 選択中の項目
     @Environment(\.dismiss) private var dismiss
     @State private var pressedItem: String? = nil   // タップ中の行を保持
-    
+    @FocusState private var isFocused: Bool
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             
@@ -25,6 +25,7 @@ struct CommonAddLayout: View {
                     .padding(12)
                     .background(Color(.systemGray6))
                     .cornerRadius(8)
+                    .focused($isFocused)
                 
                 Button(action: addItem) {
                     Text("追加")
@@ -69,6 +70,10 @@ struct CommonAddLayout: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
             }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isFocused = false
         }
     }
     
