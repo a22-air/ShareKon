@@ -116,7 +116,9 @@ struct MainView: View {
     }
     
     private func destinationView(for category: CategoryModel) -> some View {
-        ContentView(categoryModel: category)
+        let vm = CategoryViewModel(category: category)
+        
+        return ContentView(viewModel: vm)
             .environmentObject(expenseData)
     }
     

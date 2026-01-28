@@ -11,17 +11,11 @@ import Combine
 struct ContentView: View {
     @EnvironmentObject var paymentData: ExpenseData
     @Environment(\.horizontalSizeClass) var sizeClass
+    @ObservedObject var viewModel: CategoryViewModel
     @State private var showModal: Bool = false
     @State private var selectedTab: Int = 0
     @State private var selectedEditingItem: ExpenseItem? = nil
-    var categoryModel: CategoryModel
-    @StateObject var viewModel: CategoryViewModel
-    
-    init(categoryModel: CategoryModel) {
-        self.categoryModel = categoryModel
-        _viewModel = StateObject(wrappedValue: CategoryViewModel(category: categoryModel))
-    }
-    
+   
     var body: some View {
         NavigationStack {
             VStack {
@@ -37,7 +31,7 @@ struct ContentView: View {
                 
                 // MARK: - コンテンツ部分
                 if selectedTab == 3 { // 割り勘ページ
-                    SplitView(viewModel: viewModel, selectedTab: $selectedTab, category: categoryModel)
+                    SplitView(viewModel: viewModel, selectedTab: $selectedTab, category: viewModel.category)
                         .environmentObject(paymentData)
                 } else { // 未精算、精算済み、合計表示
                     ExpenseListView(viewModel: viewModel, items: tabItems) { item in
@@ -54,7 +48,7 @@ struct ContentView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("\(categoryModel.name)精算管理")
+                    Text("\(viewModel.category.name)精算管理")
                         .font(sizeClass == .regular ? .title : .subheadline)
                         .fontWeight(.semibold)
                 }
@@ -299,15 +293,16 @@ extension Array where Element: Hashable {
 #Preview {
     let sampleData = ExpenseData()
 
-       let sampleCategory = CategoryModel(
-           name: "披露宴",
-           users: ["愛利", "太郎"],
-           iconName: "folder.fill",
-           createdAt: Date()
-       )
+        let sampleCategory = CategoryModel(
+            name: "披露宴",
+            users: ["愛利", "太郎"],
+            iconName: "folder.fill",
+            categoryList: ["会場費", "料理", "装花"],
+            createdAt: Date()
+        )
 
-       return ContentView(
-           categoryModel: sampleCategory
-       )
-       .environmentObject(sampleData)
+        let sampleViewModel = CategoryViewModel(category: sampleCategory)
+
+        return ContentView(viewModel: sampleViewModel)
+            .environmentObject(sampleData)
 }
