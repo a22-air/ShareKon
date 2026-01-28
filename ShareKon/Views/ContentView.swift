@@ -73,7 +73,6 @@ struct ContentView: View {
         }
         .onAppear {
             guard !ProcessInfo.isPreview else { return }
-            viewModel.listenItems()
             DispatchQueue.main.async {
                 selectedTab = 2
             }
@@ -82,7 +81,7 @@ struct ContentView: View {
     
     // MARK: - タブごとのアイテム
     var tabItems: [ExpenseItem] {
-        let items = viewModel.category.items
+        let items = viewModel.items
 
         switch selectedTab {
         case 0: return items.filter { !$0.isPaid }

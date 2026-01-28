@@ -11,9 +11,12 @@ import FirebaseFirestore
 @MainActor
 class CategoryViewModel: ObservableObject {
     @Published var category: CategoryModel
+    @Published var items: [ExpenseItem] = []
     private var db = Firestore.firestore()
+    
     init(category: CategoryModel) {
         self.category = category
+        listenItems()
     }
     
     // カテゴリを Firestore に保存
@@ -83,11 +86,12 @@ class CategoryViewModel: ObservableObject {
                 }
                 
                 DispatchQueue.main.async {
-                    self?.category.items = sortedItems
+                    self?.items = sortedItems
                 }
             }
     }
     
+
     // カテゴリ＋サブコレクション削除
     func deleteCategoryWithItems() async throws {
         let categoryRef = db.collection("categories").document(category.id)
@@ -110,8 +114,8 @@ class CategoryViewModel: ObservableObject {
         try await itemRef.delete()
         
         // オプション：items 配列からも削除
-        if let index = category.items.firstIndex(where: { $0.id == item.id }) {
-            category.items.remove(at: index)
+        if let index = items.firstIndex(where: { $0.id == item.id }) {
+            items.remove(at: index)
         }
     }
 }

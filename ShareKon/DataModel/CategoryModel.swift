@@ -7,14 +7,13 @@
 
 import Foundation
 
-final class CategoryModel: ObservableObject, Identifiable {
+struct CategoryModel: Identifiable, Codable {
     let id: String
-    @Published var name: String
-    @Published var users: [String] = []       // ユーザー名（UID なし、個人管理用）
-    @Published var iconName: String
-    @Published var categoryList: [String] = []
-    @Published var items: [ExpenseItem] = []
-    @Published var createdAt: Date? // 登録順を安定させるために作成
+    var name: String
+    var users: [String] = []       // ユーザー名（UID なし、個人管理用）
+    var iconName: String
+    var categoryList: [String] = []
+    var createdAt: Date? // 登録順を安定させるために作成
     // idを指定可能に変更
     init(id: String = UUID().uuidString,
          name: String,

@@ -24,7 +24,7 @@ struct SplitView: View {
     @State private var isCalculating = false
     var category: CategoryModel //どのカテゴリかRecognize
     private var categoryItems: [ExpenseItem] {
-        viewModel.category.items
+        viewModel.items
     }
     
     var body: some View {
