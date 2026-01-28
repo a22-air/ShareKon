@@ -60,28 +60,12 @@ struct AddView: View {
         NavigationView{
             
             List{
-                if viewModel.category.categoryList.isEmpty {
-                    // 登録ユーザーがない場合
-                    // 空の場合はダミーの selectedItem を作る
-                    CommonSelectView(
-                        items: $viewModel.category.categoryList,
-                        
-                        // selectedItem にはダミーの Binding を渡す
-                        selectedItem: Binding.constant("カテゴリーを追加してください"),
-                        
-                        destination: CategoryView(
-                            categories: $viewModel.category.categoryList,
-                            selectedCategory: $selectedCategory
-                        )
-                    )
-                } else {
-                    // カテゴリ選択
-                    CommonSelectView(
-                        items: $viewModel.category.categoryList,
-                        selectedItem: $selectedCategory,
-                        destination: CategoryView(categories: $viewModel.category.categoryList, selectedCategory: $selectedCategory)
-                    )
-                }
+                // カテゴリ選択
+                CommonSelectView(
+                    items: $viewModel.category.categoryList,
+                    selectedItem: $selectedCategory,
+                    destination: CategoryView(categories: $viewModel.category.categoryList, selectedCategory: $selectedCategory)
+                )
                 // カレンダー表示
                 DatePicker(
                     selection: Binding(

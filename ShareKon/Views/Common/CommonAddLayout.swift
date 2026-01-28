@@ -47,6 +47,10 @@ struct CommonAddLayout: View {
                             Button {
                                 if let index = items.firstIndex(of: item) {
                                     items.remove(at: index)
+                                    
+                                    if items.isEmpty {
+                                        selectedItem = nil
+                                    }
                                 }
                             } label: {
                                 Image(systemName: "trash")

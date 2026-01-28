@@ -17,11 +17,10 @@ struct CommonSelectView<Destination: View>: View {
             HStack {
                 Text(selectedItem ?? items.first ?? "カテゴリーを追加してください")
                     .foregroundColor(
-                        (selectedItem == "カテゴリーを追加してください")
+                        (selectedItem == nil)
                         ? .red
                         : .primary
                     )
-
                 Spacer()
             }
             .padding(.horizontal)
