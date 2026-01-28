@@ -16,6 +16,8 @@ struct CommonAddLayout: View {
     @Environment(\.dismiss) private var dismiss
     @State private var pressedItem: String? = nil   // タップ中の行を保持
     @FocusState private var isFocused: Bool
+    @State private var isEditing = false
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             
@@ -40,26 +42,42 @@ struct CommonAddLayout: View {
             // リスト
             List {
                 ForEach(items, id: \.self) { item in
-                    Button {
-                        selectedItem = item  // 選択データをバインド
-                        dismiss()            // 前画面に戻る
-                    } label: {
-                        HStack {
-                            Text(item)
-                            Spacer()
+                    HStack {
+                        if isEditing {
+                            Button {
+                                if let index = items.firstIndex(of: item) {
+                                    items.remove(at: index)
+                                }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(.borderless)
                         }
-                        .background(pressedItem == item ? Color.gray.opacity(0.3) : Color.clear)
-                        .contentShape(Rectangle()) // 行全体をタップ可能に
+
+                        Text(item)
+                            .foregroundColor(.black)
+
+                        Spacer()
+
+                        if isEditing {
+                            Image(systemName: "line.3.horizontal")
+                                .foregroundColor(.gray)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in pressedItem = item }
-                            .onEnded { _ in pressedItem = nil }
-                    )
+                    .contentShape(Rectangle()) // 行全体タップ可
+                    .onTapGesture {
+                        guard !isEditing else { return } // 編集中は選択させない
+                        selectedItem = item
+                        dismiss()
+                    }
+
                 }
-                .onDelete(perform: deleteItems) // 削除
-                .onMove(perform: moveItems) // 並び替え
+                .onMove { source, destination in
+                    if isEditing {
+                        items.move(fromOffsets: source, toOffset: destination)
+                    }
+                }
             }
             .cornerRadius(8)
             
@@ -68,7 +86,9 @@ struct CommonAddLayout: View {
         .navigationTitle(title)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                EditButton()
+                Button(isEditing ? "完了" : "編集") {
+                    isEditing.toggle()
+                }
             }
         }
         .contentShape(Rectangle())
@@ -85,14 +105,7 @@ struct CommonAddLayout: View {
         inputText = "" // 入力欄クリア
         
     }
-    // 削除機能
-    func deleteItems(at offsets: IndexSet) {
-        items.remove(atOffsets: offsets)
-    }
-    // 並び替え機能
-    func moveItems(from source: IndexSet, to destination: Int) {
-        items.move(fromOffsets: source, toOffset: destination)
-    }
+
 }
 
 #Preview {
