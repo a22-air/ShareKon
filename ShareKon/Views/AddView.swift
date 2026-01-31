@@ -117,35 +117,63 @@ struct AddView: View {
                     
                 }
                 
-                ForEach(selectedUsers, id: \.self) { user in
+                ForEach(selectedUsers.indices, id: \.self) { index in
+                    let user = selectedUsers[index]
+
+                    // 金額用 Binding
                     let binding = Binding(
                         get: { userAmounts[user] ?? "" },
                         set: { userAmounts[user] = $0 }
                     )
-                    
+
                     HStack {
-                        Text(user)
-                            .frame(width: 80, alignment: .leading)
-                        
+                        // ユーザー名 Picker
+                        Picker("", selection: Binding(
+                            get: { selectedUsers[index] },
+                            set: { newUser in
+                                let oldUser = selectedUsers[index]
+
+                                // 名前差し替え
+                                selectedUsers[index] = newUser
+
+                                // 金額を引き継ぐ
+                                if let amount = userAmounts[oldUser] {
+                                    userAmounts[newUser] = amount
+                                }
+                                userAmounts[oldUser] = nil
+                            }
+                        )) {
+                            ForEach(
+                                viewModel.category.users.filter {
+                                    $0 == selectedUsers[index] || !selectedUsers.contains($0)
+                                },
+                                id: \.self
+                            ){ user in
+                                Text(user).tag(user)
+                                    
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.black)
+                        .frame(width: 80, alignment: .leading)
+
+                        // 金額入力
                         TextField("¥0", text: binding)
                             .keyboardType(.numberPad)
-                            .foregroundColor(.black)
                             .multilineTextAlignment(.trailing)
-                            .onChange(of: binding.wrappedValue) { oldValue, newValue in
+                            .onChange(of: binding.wrappedValue) { _, newValue in
                                 formatCurrency(newValue, for: user)
                             }
-                        
+
                         // 削除ボタン
-                        Button(action: {
-                            // selectedUsersから削除
-                            selectedUsers.removeAll { $0 == user }
-                            // 金額もクリア
+                        Button {
+                            selectedUsers.remove(at: index)
                             userAmounts[user] = nil
-                        }) {
+                        } label: {
                             Image(systemName: "trash")
                                 .foregroundColor(.red)
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .buttonStyle(.plain)
                     }
                     .padding(.leading, 16)
                 }
