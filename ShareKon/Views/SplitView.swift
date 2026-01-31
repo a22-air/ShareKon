@@ -34,7 +34,7 @@ struct SplitView: View {
                 // --- カード①: 入力フォーム ---
                 VStack(alignment: .leading, spacing: 16) {
                     
-                    Text("援助金入力")
+                    Text("割り勘から差し引く金額")
                         .font(.headline)
                     
                     TextField("¥0", text: $assistanceText)
