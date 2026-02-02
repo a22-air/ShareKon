@@ -9,10 +9,10 @@ import SwiftUI
 
 struct AddCategorySheet: View {
     @Binding var newCategoryName: String
-    @Binding var newUserName: String
     @Binding var userNames: [String]
     @Binding var selectedIcon: String
     @FocusState private var isFocused: Bool
+    @State var newUserName: String = ""
     let onSave: () -> Void
     let onClose: () -> Void
     let columns = [
@@ -57,6 +57,7 @@ struct AddCategorySheet: View {
                         guard !trimmed.isEmpty else { return }
                         userNames.append(trimmed)
                         newUserName = ""
+                        isFocused = false
                     }
                     .buttonStyle(.borderedProminent)
                 }
@@ -139,16 +140,16 @@ struct AddCategorySheet: View {
 // Preview 用ラッパー
 struct AddCategorySheetPreviewWrapper: View {
     @State var newCategoryName = "結婚式"
-    @State var newUserName = ""
+    @State var newUserName = "愛利"
     @State var userNames: [String] = []
     @State var selectedIcons: String = "folder.fill"
     
     var body: some View {
         AddCategorySheet(
             newCategoryName: $newCategoryName,
-            newUserName: $newUserName,
             userNames: $userNames,
             selectedIcon: $selectedIcons,
+            newUserName: newUserName,
             onSave: {},
             onClose: {}
         )

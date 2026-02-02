@@ -14,7 +14,6 @@ struct MainView: View {
     @State private var userNames: [String] = []
     @State private var showAddCategorySheet = false
     @State private var newCategoryName = ""
-    @State private var newUserName = ""
     @State private var selectedIcon: String = "folder.fill"
     @State private var showDeleteAlert = false
     @State private var categoryToDelete: CategoryModel?
@@ -81,7 +80,6 @@ struct MainView: View {
         .sheet(isPresented: $showAddCategorySheet) {
             AddCategorySheet(
                 newCategoryName: $newCategoryName,
-                newUserName: $newUserName,
                 userNames: $userNames,
                 selectedIcon: $selectedIcon,
                 onSave: { //保存ロジックはメインで管理
