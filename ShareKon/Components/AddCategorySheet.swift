@@ -109,20 +109,22 @@ struct AddCategorySheet: View {
                 }
             }
             
-            Button("保存", action: onSave)
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    newCategoryName.isEmpty || userNames.isEmpty
-                    ? Color.gray
-                    : Color.blue
-                )
-                .cornerRadius(12)
-                .padding(.horizontal, 20)
-                .padding(.top, 50)
-                .disabled(newCategoryName.isEmpty || userNames.isEmpty)
+            Button(action: onSave) {
+                Text("保存")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .background(
+                newCategoryName.isEmpty || userNames.isEmpty
+                ? Color.gray
+                : Color.blue
+            )
+            .cornerRadius(12)
+            .padding(.horizontal, 20)
+            .padding(.top, 50)
+            .disabled(newCategoryName.isEmpty || userNames.isEmpty)
             
             Spacer()
             
