@@ -95,7 +95,6 @@ struct ContentView: View {
 
 // MARK: - 日付ごとのリスト表示
 struct ExpenseListView: View {
-    @EnvironmentObject var paymentData: ExpenseData
     @ObservedObject var viewModel: CategoryViewModel
     let items: [ExpenseItem]
     let onSelect: (ExpenseItem) -> Void
@@ -103,7 +102,7 @@ struct ExpenseListView: View {
     var body: some View {
         List {
             ForEach(groupedByDate, id: \.key) { date, items in
-                ExpenseSectionView(viewModel: viewModel, date: date, items: items, onSelect: onSelect)
+                ExpenseSectionView(viewModel: viewModel, date: date, onSelect: onSelect)
             }
         }
         .listStyle(.plain) // 見た目を ScrollView に近づける
@@ -136,12 +135,17 @@ struct ExpenseSectionView: View {
     @EnvironmentObject var paymentData: ExpenseData
     @ObservedObject var viewModel: CategoryViewModel
     let date: String
-    let items: [ExpenseItem]
     let onSelect: (ExpenseItem) -> Void
     
     var body: some View {
         Section(header: Text(date).font(.headline)) {
-            ForEach(items) { item in
+            // ✅ viewModel.items の中から、このセクションの日付に合うものだけを表示
+            ForEach(viewModel.items.filter { item in
+                let formatter = DateFormatter()
+                formatter.dateFormat = "M月d日(E)"
+                formatter.locale = Locale(identifier: "ja_JP")
+                return formatter.string(from: item.date) == date
+            }) { item in
                 ExpenseRowView(item: item)
                     .onTapGesture { onSelect(item) }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -149,8 +153,8 @@ struct ExpenseSectionView: View {
                             Label("削除", systemImage: "trash")
                         }
                     }
-                    .listRowSeparator(.hidden) // ← 区切り線非表示
-                    .listRowBackground(Color.clear) // ← 背景も透明に
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
             }
         }
         .listRowSeparator(.hidden) // セクションヘッダーの前後も非表示
