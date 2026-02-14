@@ -278,25 +278,25 @@ struct AddView: View {
     
     // 保存ボタンアクション
     func saveAction() {
-        guard !ProcessInfo.isPreview else {
-            print("🧪 Preview: saveCategory 無効")
-            return
-        }
+
+        // Preview では保存しない
+        guard !ProcessInfo.isPreview else { return }
+
+        // ユーザーごとの金額を Int に変換
         var amounts: [String: Int] = [:]
-        
         for user in selectedUsers {
             let value = userAmounts[user]?
                 .replacingOccurrences(of: "¥", with: "")
                 .replacingOccurrences(of: ",", with: "") ?? "0"
             amounts[user] = Int(value) ?? 0
         }
-        
+
         let total = amounts.values.reduce(0, +)
 
-        // === 編集モードか判定 ===
+        // === 保存する ExpenseItem を作成 ===
         let itemToSave: ExpenseItem
         if var editing = editingItem {
-            // ---- 編集モード（上書き）----
+            // 編集（上書き）
             editing.category = selectedCategory ?? "未選択"
             editing.date = date
             editing.totalAmount = total
@@ -304,7 +304,7 @@ struct AddView: View {
             editing.isPaid = isPaid
             itemToSave = editing
         } else {
-            // ---- 新規作成 ----
+            // 新規作成
             itemToSave = ExpenseItem(
                 category: selectedCategory ?? "未選択",
                 date: date,
@@ -316,26 +316,17 @@ struct AddView: View {
 
         Task {
             do {
+                // カテゴリ（users 等）保存
                 try await viewModel.saveCategory()
-                try await viewModel.saveExpenseItem(itemToSave)
 
-                // ローカル反映
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "M月d日(E)"
-                dateFormatter.locale = Locale(identifier: "ja_JP")
-                let dateKey = dateFormatter.string(from: date)
-
-                // 編集なら差し替え、新規なら追加
-                if editingItem != nil {
-                    if let index = expenseData.paymentsByDate[dateKey]?
-                        .firstIndex(where: { $0.id == itemToSave.id }) {
-                        expenseData.paymentsByDate[dateKey]?[index] = itemToSave
-                    }
-                } else {
-                    expenseData.paymentsByDate[dateKey, default: []].append(itemToSave)
-                }
+                // ExpenseItem 保存（新規 or 編集）
+                try await viewModel.saveExpenseItem(
+                    itemToSave,
+                    isNew: editingItem == nil
+                )
 
                 dismiss()
+
             } catch {
                 print("Firestore 保存失敗: \(error)")
             }

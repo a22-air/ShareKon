@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CategoryModel: Identifiable, Codable {
+struct CategoryModel: Identifiable, Codable, Equatable {
     let id: String
     var name: String
     var users: [String] = []       // ユーザー名（UID なし、個人管理用）

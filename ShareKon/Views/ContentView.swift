@@ -63,12 +63,10 @@ struct ContentView: View {
             // 新規追加モード
             .sheet(isPresented: $showModal) {
                 AddView(viewModel: viewModel)
-                    .environmentObject(paymentData)
             }
             // 編集モード
             .sheet(item: $selectedEditingItem) { item in
                 AddView(viewModel: viewModel, editingItem: item)
-                    .environmentObject(paymentData)
             }
         }
         .onAppear {

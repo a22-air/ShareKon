@@ -18,7 +18,8 @@ struct MainView: View {
     @State private var showDeleteAlert = false
     @State private var categoryToDelete: CategoryModel?
     @State private var isEditing = false
-    
+    @State private var categoryViewModels: [String: CategoryViewModel] = [:]
+
     private var headerView: some View {
         VStack(spacing: 12) {
             HStack {
@@ -53,6 +54,14 @@ struct MainView: View {
                 categoryList
             }
         }
+        .onChange(of: listVM.categories.map(\.id)) {
+            for category in listVM.categories {
+                if categoryViewModels[category.id] == nil {
+                    categoryViewModels[category.id] = CategoryViewModel(category: category)
+                }
+            }
+        }
+
         // アラート表示
         .alert(
             "カテゴリを削除しますか？",
@@ -111,13 +120,18 @@ struct MainView: View {
                 }
             )
         }
+
     }
     
     private func destinationView(for category: CategoryModel) -> some View {
-        let vm = CategoryViewModel(category: category)
-        
-        return ContentView(viewModel: vm)
-            .environmentObject(expenseData)
+        Group {
+                if let vm = categoryViewModels[category.id] {
+                    ContentView(viewModel: vm)
+                        .environmentObject(expenseData)
+                } else {
+                    ProgressView()
+                }
+            }
     }
     
     private func deleteCategory(_ category: CategoryModel) {
