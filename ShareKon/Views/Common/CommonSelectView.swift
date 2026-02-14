@@ -26,13 +26,9 @@ struct CommonSelectView<Destination: View>: View {
             .padding(.horizontal)
         }
         .buttonStyle(.plain)
-        .onAppear {
-            if selectedItem == nil {
-                selectedItem = items.first
-            }
         }
     }
-}
+
 #Preview {
     CommonSelectViewPreviewWrapper()
 }

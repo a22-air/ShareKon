@@ -15,7 +15,8 @@ struct ContentView: View {
     @State private var showModal: Bool = false
     @State private var selectedTab: Int = 0
     @State private var selectedEditingItem: ExpenseItem? = nil
-   
+    @StateObject private var vm = AddExpenseViewModel()
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -62,11 +63,11 @@ struct ContentView: View {
             }
             // 新規追加モード
             .sheet(isPresented: $showModal) {
-                AddView(viewModel: viewModel)
+                AddView(viewModel: viewModel, vm: vm)
             }
             // 編集モード
             .sheet(item: $selectedEditingItem) { item in
-                AddView(viewModel: viewModel, editingItem: item)
+                AddView(viewModel: viewModel, vm: vm, editingItem: item)
             }
         }
         .onAppear {

@@ -39,7 +39,8 @@ struct AddView: View {
     @EnvironmentObject var expenseData: ExpenseData // データモデル
     @State private var isPaid: Bool = false // ← 精算済みかどうか
     @ObservedObject var viewModel: CategoryViewModel
-   
+    @ObservedObject var vm: AddExpenseViewModel
+    
     var isSaveDisabled: Bool {
         return calculateTotal() == 0
     }
@@ -55,8 +56,10 @@ struct AddView: View {
                 // カテゴリ選択
                 CommonSelectView(
                     items: $viewModel.category.categoryList,
-                    selectedItem: $selectedCategory,
-                    destination: CategoryView(categories: $viewModel.category.categoryList, selectedCategory: $selectedCategory)
+                    selectedItem: $vm.selectedCategory,
+                    destination: CategoryView(
+                        categories: $viewModel.category.categoryList,
+                        selectedCategory: $vm.selectedCategory)
                 )
                 // カレンダー表示
                 DatePicker(
@@ -244,6 +247,13 @@ struct AddView: View {
             } // toolbar
             
         } // Navigation
+        .onAppear {
+            if let item = editingItem {
+                vm.setupForEdit(item: item)
+            } else {
+                vm.reset()
+            }
+        }
         
     } // View
     
@@ -358,8 +368,9 @@ struct AddView: View {
     )
     
     let sampleViewModel = CategoryViewModel(category: sampleCategory)
-    
+    let addExpenseViewModel = AddExpenseViewModel()
+
     AddView(
-        viewModel: sampleViewModel
+        viewModel: sampleViewModel, vm: addExpenseViewModel
     )
 }
