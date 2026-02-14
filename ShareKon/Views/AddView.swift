@@ -44,14 +44,6 @@ struct AddView: View {
         return calculateTotal() == 0
     }
     
-    let now = Date()
-    // 日付フォーマット
-    let style = Date.VerbatimFormatStyle(
-        format: "\(year: .padded(4))年\(month: .twoDigits)月\(day: .twoDigits)日",
-        locale: Locale(identifier: "ja_JP"),
-        timeZone: TimeZone(identifier: "Asia/Tokyo")!,
-        calendar: Calendar(identifier: .gregorian)
-    )
     // 編集する場合の ExpenseItem
     var editingItem: ExpenseItem?
     
