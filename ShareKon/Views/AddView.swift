@@ -299,7 +299,7 @@ struct AddView: View {
         let itemToSave: ExpenseItem
         if var editing = editingItem {
             // 編集（上書き）
-            editing.category = selectedCategory ?? "未選択"
+            editing.category = vm.selectedCategory ?? "未選択"
             editing.date = date
             editing.totalAmount = total
             editing.userAmounts = amounts
@@ -308,7 +308,7 @@ struct AddView: View {
         } else {
             // 新規作成
             itemToSave = ExpenseItem(
-                category: selectedCategory ?? "未選択",
+                category: vm.selectedCategory ?? "未選択",
                 date: date,
                 totalAmount: total,
                 userAmounts: amounts,
