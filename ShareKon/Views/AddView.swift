@@ -43,6 +43,9 @@ struct AddView: View {
     var isSaveDisabled: Bool {
         return calculateTotal() == 0
     }
+    var isCategoryInvalid: Bool {
+        viewModel.category.categoryList.isEmpty
+    }
     
     // 編集する場合の ExpenseItem
     var editingItem: ExpenseItem?
@@ -300,7 +303,8 @@ struct AddView: View {
         let itemToSave: ExpenseItem
         if var editing = editingItem {
             // 編集（上書き）
-            editing.category = vm.selectedCategory ?? "未選択"
+            editing.category = vm.selectedCategory
+                ?? viewModel.category.categoryList.first!
             editing.date = date
             editing.totalAmount = total
             editing.userAmounts = amounts
@@ -309,7 +313,7 @@ struct AddView: View {
         } else {
             // 新規作成
             itemToSave = ExpenseItem(
-                category: vm.selectedCategory ?? "未選択",
+                category: vm.selectedCategory ?? viewModel.category.categoryList.first!,
                 date: date,
                 totalAmount: total,
                 userAmounts: amounts,
