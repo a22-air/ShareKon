@@ -237,11 +237,13 @@ struct AddView: View {
                             .bold()
                             .padding(.vertical, 6)       // ボタン上下の余白
                             .padding(.horizontal, 12)    // ボタン左右の余白
-                            .background(isSaveDisabled ? Color.gray : Color.blue)      // 背景色
+                            .background(isSaveDisabled || isCategoryInvalid ? Color.gray : Color.blue)      // 背景色
                             .foregroundColor(.white)     // 文字色
                             .cornerRadius(8)             // 角丸
                     }
-                    .disabled(isSaveDisabled) // ¥0 では保存ボタンが押下できない
+                    .disabled(isSaveDisabled || isCategoryInvalid)
+                    // ¥0 では保存ボタンが押下できない
+                    // categoryListが空では保存ボタンが押下できない
                 }
             } // toolbar
             
