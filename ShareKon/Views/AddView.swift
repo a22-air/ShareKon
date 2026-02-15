@@ -36,7 +36,6 @@ struct AddView: View {
     @State private var userAmounts: [String: String] = [:]
     @State private var checked = false
     @State private var selectedUsers: [String] = []
-    @EnvironmentObject var expenseData: ExpenseData // データモデル
     @State private var isPaid: Bool = false // ← 精算済みかどうか
     @ObservedObject var viewModel: CategoryViewModel
     @ObservedObject var vm: AddExpenseViewModel
