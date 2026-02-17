@@ -41,32 +41,19 @@ struct CommonAddLayout: View {
             
             // リスト
             List {
-                ForEach(items, id: \.self) { item in
+                ForEach(items.indices, id: \.self) { index in
+                    let item = items[index]
+                    
                     HStack {
                         if isEditing {
-                            Button {
-                                if let index = items.firstIndex(of: item) {
-                                    items.remove(at: index)
-                                    
-                                    if items.isEmpty {
-                                        selectedItem = nil
-                                    }
-                                }
-                            } label: {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                            }
-                            .buttonStyle(.borderless)
-                        }
-
-                        Text(item)
-                            .foregroundColor(.black)
-
-                        Spacer()
-
-                        if isEditing {
-                            Image(systemName: "line.3.horizontal")
-                                .foregroundColor(.gray)
+                            EditingView(
+                                item: $items[index],
+                                items: $items,
+                                selectedItem: $selectedItem
+                            )
+                        } else {
+                            Text(item)
+                                .foregroundColor(.black)
                         }
                     }
                     .contentShape(Rectangle()) // 行全体タップ可
@@ -75,7 +62,7 @@ struct CommonAddLayout: View {
                         selectedItem = item
                         dismiss()
                     }
-
+                    
                 }
                 .onMove { source, destination in
                     if isEditing {
@@ -101,6 +88,30 @@ struct CommonAddLayout: View {
         }
     }
     
+    struct EditingView: View {
+        @Binding var item: String
+        @Binding var items: [String]
+        @Binding var selectedItem: String?
+        
+        var body: some View {
+            HStack {
+                Button {
+                    items.removeAll { $0 == item }
+                    if selectedItem == item {
+                        selectedItem = nil
+                    }
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.borderless)
+                
+                TextField("", text: $item)
+                    .textFieldStyle(.roundedBorder)
+            }
+        }
+    }
+
     // 入力内容をリストに追加
     private func addItem() {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
