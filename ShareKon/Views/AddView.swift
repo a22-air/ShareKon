@@ -118,18 +118,22 @@ struct AddView: View {
                         get: { userAmounts[user.id] ?? "" },
                         set: { userAmounts[user.id] = $0 }
                     )
-
+                    
                     HStack {
-
+                        let availableUsers: [User] = {
+                            viewModel.category.users.filter { user in
+                                !selectedUsers.contains(where: { $0.id == user.id && user.id != selectedUsers[index].id })
+                            }
+                        }()
                         // Picker（User 選択）
                         Picker("", selection: Binding(
                             get: { selectedUsers[index] },
                             set: { newUser in
                                 let oldUser = selectedUsers[index]
-
+                                
                                 // 差し替え
                                 selectedUsers[index] = newUser
-
+                                
                                 // 金額引き継ぎ
                                 if let amount = userAmounts[oldUser.id] {
                                     userAmounts[newUser.id] = amount
@@ -137,19 +141,14 @@ struct AddView: View {
                                 userAmounts[oldUser.id] = nil
                             }
                         )) {
-                            ForEach(
-                                viewModel.category.users.filter {
-                                    $0.id == selectedUsers[index].id || !selectedUsers.contains(where: { $0.id == $0.id })
-                                },
-                                id: \.id
-                            ) { user in
+                            ForEach(availableUsers, id: \.id) { user in
                                 Text(user.name).tag(user)
                             }
                         }
                         .pickerStyle(.menu)
                         .tint(.black)
                         .frame(width: 80, alignment: .leading)
-
+                        
                         // 金額入力
                         TextField("¥0", text: binding)
                             .keyboardType(.numberPad)
