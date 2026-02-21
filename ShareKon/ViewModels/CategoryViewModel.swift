@@ -28,22 +28,27 @@ class CategoryViewModel: ObservableObject {
         let ref = db.collection("categories").document(category.id)
 
             // Firestore 用に変換
-            let usersData = category.users.map { $0.name }
-            let categoryListData = category.categoryList.map { $0.name }
-
-            try await ref.setData([
-                "name": category.name,
-                "users": usersData,
-                "iconName": category.iconName,
-                "categoryList": categoryListData,
-                "createdAt": FieldValue.serverTimestamp()
-            ], merge: true)
-
-            // serverTimestamp を確定させるため再取得
-            let snap = try await ref.getDocument()
-            if let ts = snap.data()?["createdAt"] as? Timestamp {
-                category.createdAt = ts.dateValue()
-            }
+        let usersData = category.users.map {
+            [
+                "id": $0.id.uuidString,
+                "name": $0.name
+            ]
+        }
+        let categoryListData = category.categoryList.map { $0.name }
+        
+        try await ref.setData([
+            "name": category.name,
+            "users": usersData,
+            "iconName": category.iconName,
+            "categoryList": categoryListData,
+            "createdAt": FieldValue.serverTimestamp()
+        ], merge: true)
+        
+        // serverTimestamp を確定させるため再取得
+        let snap = try await ref.getDocument()
+        if let ts = snap.data()?["createdAt"] as? Timestamp {
+            category.createdAt = ts.dateValue()
+        }
     }
     
     // ExpenseItem を Firestore に保存

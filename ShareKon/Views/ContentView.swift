@@ -22,7 +22,7 @@ struct ContentView: View {
         f.locale = Locale(identifier: "ja_JP")
         return f
     }()
-
+    
     var body: some View {
         NavigationStack {
             VStack {
@@ -87,7 +87,7 @@ struct ContentView: View {
     // MARK: - タブごとのアイテム
     var tabItems: [ExpenseItem] {
         let items = viewModel.items
-
+        
         switch selectedTab {
         case 0: return items.filter { !$0.isPaid }
         case 1: return items.filter { $0.isPaid }
@@ -116,7 +116,7 @@ struct ExpenseListView: View {
     // items配列を「日付ごと」にまとめて、日付順に並べた配列として返す
     private var groupedByDate: [(key: String, value: [ExpenseItem])] {
         let df = DateFormatter.displayDate
-
+        
         // ① items を日付（String）でグループ化
         //    例：
         //    "2025/01/01": [ItemA, ItemB]
@@ -124,14 +124,14 @@ struct ExpenseListView: View {
         let grouped = Dictionary(grouping: items) {
             df.string(from: $0.date)  // Date → "yyyy/MM/dd"
         }
-
+        
         // ② グループ化された (key: 日付文字列) を
         //    実際の Date に戻して昇順に並び替える
         return grouped.sorted { (a, b) -> Bool in
             (df.date(from: a.key) ?? Date()) < (df.date(from: b.key) ?? Date())
         }
     }
-
+    
 }
 
 
@@ -147,7 +147,7 @@ struct ExpenseSectionView: View {
         f.locale = Locale(identifier: "ja_JP")
         return f
     }()
-
+    
     var body: some View {
         Section(header: Text(date).font(.headline)) {
             // ✅ viewModel.items の中から、このセクションの日付に合うものだけを表示
@@ -156,7 +156,7 @@ struct ExpenseSectionView: View {
             }) { item in
                 ExpenseRowView(
                     item: item,
-                    users: viewModel.category.users
+                    viewModel: viewModel
                 )
                 .onTapGesture { onSelect(item) }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -200,7 +200,7 @@ struct ExpenseSectionView: View {
 struct ExpenseRowView: View {
     @Environment(\.horizontalSizeClass) var sizeClass
     let item: ExpenseItem
-    let users: [User]
+    @ObservedObject var viewModel: CategoryViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -213,8 +213,11 @@ struct ExpenseRowView: View {
             }
             
             ForEach(item.userAmounts.keys.sorted(), id: \.self) { userId in
-                let userName = users.first(where: { $0.id == userId })?.name ?? "削除済みユーザー"
-                
+                let userName =
+                viewModel.category.users
+                    .first(where: { $0.id == userId })?
+                    .name
+                ?? "削除済みユーザー"
                 HStack {
                     Text(userName)
                         .font(sizeClass == .regular ? .title2 : .subheadline)
@@ -323,22 +326,22 @@ extension Array where Element: Hashable {
 // MARK: - Preview
 #Preview {
     let sampleData = ExpenseData()
-
-        let users = [
-            User(name: "愛利"),
-            User(name: "太郎")
-        ]
-
-        let sampleCategory = CategoryModel(
-            name: "披露宴",
-            users: users,
-            iconName: "folder.fill",
-            categoryList: [CategoryItem(name:"会場費")],
-            createdAt: Date()
-        )
-
-        let sampleViewModel = CategoryViewModel(category: sampleCategory)
-
-        ContentView(viewModel: sampleViewModel)
-            .environmentObject(sampleData)
+    
+    let users = [
+        User(name: "愛利"),
+        User(name: "太郎")
+    ]
+    
+    let sampleCategory = CategoryModel(
+        name: "披露宴",
+        users: users,
+        iconName: "folder.fill",
+        categoryList: [CategoryItem(name:"会場費")],
+        createdAt: Date()
+    )
+    
+    let sampleViewModel = CategoryViewModel(category: sampleCategory)
+    
+    ContentView(viewModel: sampleViewModel)
+        .environmentObject(sampleData)
 }

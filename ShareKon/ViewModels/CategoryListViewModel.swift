@@ -31,11 +31,17 @@ class CategoryListViewModel: ObservableObject {
                     let iconName = data["iconName"] as? String ?? "folder.fill"
                     let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
 
-                    let userNames = data["users"] as? [String] ?? []
-                    let users: [User] = userNames.map {
-                        User(name: $0)
+                    // ✅ users 修正ポイント
+                    let users: [User] = (data["users"] as? [[String: Any]] ?? []).compactMap {
+                        guard
+                            let idString = $0["id"] as? String,
+                            let id = UUID(uuidString: idString),
+                            let name = $0["name"] as? String
+                        else { return nil }
+                        
+                        return User(id: id, name: name)
                     }
-
+                    
                     let categoryNames = data["categoryList"] as? [String] ?? []
                     let categoryItems: [CategoryItem] = categoryNames.map {
                         CategoryItem(name: $0)
@@ -69,10 +75,15 @@ class CategoryListViewModel: ObservableObject {
                     let iconName = data["iconName"] as? String ?? "folder.fill"
                     let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
                     
-                    // 🔽 users: [String] → [User]
-                    let userNames = data["users"] as? [String] ?? []
-                    let users: [User] = userNames.map {
-                        User(name: $0)
+                    // ✅ users 修正ポイント
+                    let users: [User] = (data["users"] as? [[String: Any]] ?? []).compactMap {
+                        guard
+                            let idString = $0["id"] as? String,
+                            let id = UUID(uuidString: idString),
+                            let name = $0["name"] as? String
+                        else { return nil }
+                        
+                        return User(id: id, name: name)
                     }
                     
                     // 🔽 categoryList: [String] → [CategoryItem]
