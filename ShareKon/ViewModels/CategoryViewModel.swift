@@ -28,14 +28,14 @@ class CategoryViewModel: ObservableObject {
         let ref = db.collection("categories").document(category.id)
 
             // Firestore 用に変換
-            let usersData = category.users.map { $0.id.uuidString }
+            let usersData = category.users.map { $0.name }
             let categoryListData = category.categoryList.map { $0.name }
 
             try await ref.setData([
                 "name": category.name,
-                "users": usersData,                 // [String]
+                "users": usersData,
                 "iconName": category.iconName,
-                "categoryList": categoryListData,   // [String]
+                "categoryList": categoryListData,
                 "createdAt": FieldValue.serverTimestamp()
             ], merge: true)
 
