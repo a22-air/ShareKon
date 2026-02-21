@@ -10,10 +10,10 @@ import SwiftUI
 struct SplitView: View {
     @EnvironmentObject var paymentData: ExpenseData
     @ObservedObject var viewModel: CategoryViewModel
-    @State private var userValues: [String: Int] = [:]
+    @State private var userValues: [User.ID: Int] = [:]
     @State private var hasInitialized = false
     @State private var assistanceAmount: Int = 0
-    @State private var calculatedDistributed: [String: [String: Int]]? = nil
+    @State private var calculatedDistributed: [String: [User.ID: Int]]? = nil
     @State private var displayedAssistanceAmount: Int = 0
     @State private var assistanceText: String = ""
     @FocusState private var isFocused: Bool
@@ -26,7 +26,7 @@ struct SplitView: View {
     private var categoryItems: [ExpenseItem] {
         viewModel.items
     }
-    
+   
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -56,35 +56,37 @@ struct SplitView: View {
                     Text("割り勘比率")
                         .font(.headline)
                     
-                    ForEach(uniqueUsers, id: \.self) { user in
+                    ForEach(uniqueUsers) { user in
+                        let binding = Binding<Int>(
+                            get: { userValues[user.id] ?? 1 },
+                            set: { userValues[user.id] = max(1, $0) }
+                        )
+
                         HStack {
-                            Text(user)
+                            Text(user.name)
                             Spacer()
-                            
-                            TextField(
-                                "比率",
-                                value: Binding(
-                                    get: { userValues[user] ?? 1 },
-                                    set: { userValues[user] = max(1, $0) }
-                                ),
-                                formatter: NumberFormatter()
-                            )
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.numberPad)
-                            .focused($isFocused)
-                            .multilineTextAlignment(.trailing)
+                            TextField("比率", value: binding, formatter: numberFormatter)
+                                .textFieldStyle(.roundedBorder)
+                                .keyboardType(.numberPad)
                         }
                     }
                     Button("計算する") {
                         isCalculating = true
+                        let adjustedTotal = total - displayedAssistanceAmount
+                        let adjustedPaid = paidTotal - displayedAssistanceAmount
+                        let adjustedUnpaid = unpaidTotal - displayedAssistanceAmount
+
+                        let totalResult = distribute(amount: adjustedTotal, ratios: normalizedRatios)
+                        let paidResult = distribute(amount: adjustedPaid, ratios: normalizedRatios)
+                        let unpaidResult = distribute(amount: adjustedUnpaid, ratios: normalizedRatios)
                         
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             displayedAssistanceAmount = assistanceAmount
                             
                             calculatedDistributed = [
-                                "total": distribute(amount: total - displayedAssistanceAmount, ratios: normalizedRatios),
-                                "paid": distribute(amount: paidTotal - displayedAssistanceAmount, ratios: normalizedRatios),
-                                "unpaid": distribute(amount: unpaidTotal - displayedAssistanceAmount, ratios: normalizedRatios)
+                                "total": totalResult,
+                                "paid": paidResult,
+                                "unpaid": unpaidResult
                             ]
                             
                             isCalculating = false
@@ -193,92 +195,84 @@ struct SplitView: View {
     // MARK: - Helpers
     
     // 配列順は uniqueUsers の順に合わせる（表示順と一致）
-    private func distribute(amount: Int, ratios: [String: Int]) -> [String: Int] {
+    private func distribute(
+        amount: Int,
+        ratios: [User.ID: Int]
+    ) -> [User.ID: Int] {
+
         guard amount > 0 else {
-            // 金額が 0 以下なら全員 0
-            var zeroResult: [String: Int] = [:]
-            for u in uniqueUsers { zeroResult[u] = 0 }
-            return zeroResult
+            var zero: [User.ID: Int] = [:]
+            for user in uniqueUsers {
+                zero[user.id] = 0
+            }
+            return zero
         }
-        
-        // 合計比率が 0 の場合は均等に分配する（1ずつ扱う）
-        let totals = ratios.values.reduce(0, +)
-        let effectiveRatios: [String: Int]
-        if totals == 0 {
-            // 均等分配のため全員に 1 を割り当てる（順序は uniqueUsers）
-            effectiveRatios = Dictionary(uniqueKeysWithValues: uniqueUsers.map { ($0, 1) })
-        } else {
-            effectiveRatios = ratios
-        }
-        
+
+        let totalRatio = ratios.values.reduce(0, +)
+
+        // 比率が全部 0 → 均等配分
+        let effectiveRatios: [User.ID: Int] =
+            totalRatio == 0
+            ? Dictionary(uniqueKeysWithValues: uniqueUsers.map { ($0.id, 1) })
+            : ratios
+
         let sumRatios = effectiveRatios.values.reduce(0, +)
-        var rawAssigned: [String: Int] = [:]
+
+        var assigned: [User.ID: Int] = [:]
         var assignedSum = 0
-        
+
         for user in uniqueUsers {
-            let r = effectiveRatios[user] ?? 0
-            // 下位切り捨てで整数按分
-            let share = Int(Double(amount) * Double(r) / Double(max(1, sumRatios)))
-            rawAssigned[user] = share
+            let r = effectiveRatios[user.id] ?? 0
+            let share = Int(
+                Double(amount) * Double(r) / Double(max(1, sumRatios))
+            )
+            assigned[user.id] = share
             assignedSum += share
         }
-        
-        // 余りを先頭から +1 して調整（合計が元の amount になるように）
+
+        // 端数調整
         var remainder = amount - assignedSum
-        var result = rawAssigned
-        var idx = 0
-        while remainder > 0 && idx < uniqueUsers.count {
-            let u = uniqueUsers[idx]
-            result[u, default: 0] += 1
+        var index = 0
+        while remainder > 0 {
+            let user = uniqueUsers[index]
+            assigned[user.id, default: 0] += 1
             remainder -= 1
-            idx += 1
-            if idx == uniqueUsers.count { idx = 0 } // 念のためループする（通常はここまで到達しない）
+            index = (index + 1) % uniqueUsers.count
         }
-        
-        // もし負の余り（理論上起きないが念のため） -> 減らす処理（先頭から）
-        while remainder < 0 && idx < uniqueUsers.count {
-            let u = uniqueUsers[idx]
-            if result[u, default: 0] > 0 {
-                result[u, default: 0] -= 1
-                remainder += 1
-            }
-            idx += 1
-            if idx == uniqueUsers.count { idx = 0 }
-        }
-        
-        // 結果のキーが全ユーザー持つよう補正
-        for u in uniqueUsers {
-            if result[u] == nil { result[u] = 0 }
-        }
-        
-        return result
+
+        return assigned
     }
+
+    
     
     private func initializeUserValuesIfNeeded() {
-        if !hasInitialized {
-            for user in uniqueUsers {
-                if userValues[user] == nil {
-                    userValues[user] = 1
-                }
-            }
-            hasInitialized = true
+        guard !hasInitialized else { return }
+        
+        for user in uniqueUsers {
+            userValues[user.id] = userValues[user.id] ?? 1
         }
+        hasInitialized = true
     }
     
     // 正規化された ratios（userValues をそのまま使って OK）
-    private var normalizedRatios: [String: Int] {
-        // uniqueUsers の順を保つため、欠けているユーザーは 0 を埋める
-        var dict: [String: Int] = [:]
-        for u in uniqueUsers {
-            dict[u] = userValues[u] ?? 0
+    private var normalizedRatios: [User.ID: Int] {
+        var dict: [User.ID: Int] = [:]
+        for user in uniqueUsers {
+            dict[user.id] = userValues[user.id] ?? 0
         }
         return dict
     }
     
     // MARK: - Computed for totals
-    private var uniqueUsers: [String] {
-        Array(Set(categoryItems.flatMap { $0.userAmounts.keys })).sorted()
+    private var uniqueUsers: [User] {
+        let users = categoryItems.flatMap { item in
+            item.userAmounts.keys.compactMap { userId in
+                viewModel.category.users.first { $0.id == userId }
+            }
+        }
+        return Array(Set(users))
     }
+
     // 精算済み合計
     private var paidTotal: Int {
         categoryItems.filter { $0.isPaid }.map { $0.totalAmount }.reduce(0, +)
@@ -289,6 +283,13 @@ struct SplitView: View {
     }
     // 全ての合計
     private var total: Int { paidTotal + unpaidTotal }
+    
+    private let numberFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .none
+        return f
+    }()
+
 }
 
 private struct SectionCard<Content: View>: View {
@@ -335,8 +336,8 @@ private struct SectionCard<Content: View>: View {
 private struct CategorySplitView: View {
     let title: String
     let totalAmount: Int
-    let distributed: [String: Int] // 計算済みの値のみ表示
-    let users: [String]
+    let distributed: [User.ID: Int] // 計算済みの値のみ表示
+    let users: [User]
     let displayedAssistanceAmount: Int
     var body: some View {
         
@@ -365,12 +366,12 @@ private struct CategorySplitView: View {
                 }
             }
             
-            ForEach(users, id: \.self) { user in
+            ForEach(users) { user in
                 HStack {
-                    Text(user)
+                    Text(user.name)
                         .fontWeight(.medium)
                     Spacer()
-                    Text("¥\(distributed[user] ?? 0)円")
+                    Text("¥\(distributed[user.id] ?? 0)円")
                 }
                 .padding(.vertical, 4)
             }
@@ -389,7 +390,7 @@ private struct CategorySplitView: View {
     
     let sampleCategory = CategoryModel(
         name: "旅行",
-        users: ["Airi", "Taro", "Hanako"],
+        users: [User(name:"Airi")],
         iconName: "foleder.fill"
     )
     // ViewModel を作成

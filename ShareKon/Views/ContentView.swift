@@ -16,6 +16,12 @@ struct ContentView: View {
     @State private var selectedTab: Int = 0
     @State private var selectedEditingItem: ExpenseItem? = nil
     @StateObject private var vm = AddExpenseViewModel()
+    private let sectionDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "M月d日(E)"
+        f.locale = Locale(identifier: "ja_JP")
+        return f
+    }()
 
     var body: some View {
         NavigationStack {
@@ -43,7 +49,7 @@ struct ContentView: View {
                 
                 // MARK: - 合計表示（割り勘以外）
                 if selectedTab != 3 {
-                    TotalSummaryView(items: tabItems)
+                    TotalSummaryView(items: tabItems, users: viewModel.category.users)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -135,25 +141,31 @@ struct ExpenseSectionView: View {
     @ObservedObject var viewModel: CategoryViewModel
     let date: String
     let onSelect: (ExpenseItem) -> Void
-    
+    private let sectionDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "M月d日(E)"
+        f.locale = Locale(identifier: "ja_JP")
+        return f
+    }()
+
     var body: some View {
         Section(header: Text(date).font(.headline)) {
             // ✅ viewModel.items の中から、このセクションの日付に合うものだけを表示
-            ForEach(viewModel.items.filter { item in
-                let formatter = DateFormatter()
-                formatter.dateFormat = "M月d日(E)"
-                formatter.locale = Locale(identifier: "ja_JP")
-                return formatter.string(from: item.date) == date
+            ForEach(viewModel.items.filter {
+                sectionDateFormatter.string(from: $0.date) == date
             }) { item in
-                ExpenseRowView(item: item)
-                    .onTapGesture { onSelect(item) }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) { delete(item) } label: {
-                            Label("削除", systemImage: "trash")
-                        }
+                ExpenseRowView(
+                    item: item,
+                    users: viewModel.category.users
+                )
+                .onTapGesture { onSelect(item) }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) { delete(item) } label: {
+                        Label("削除", systemImage: "trash")
                     }
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
         }
         .listRowSeparator(.hidden) // セクションヘッダーの前後も非表示
@@ -188,24 +200,29 @@ struct ExpenseSectionView: View {
 struct ExpenseRowView: View {
     @Environment(\.horizontalSizeClass) var sizeClass
     let item: ExpenseItem
+    let users: [User]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(item.category)
+                Text(item.category.name)
                     .font(sizeClass == .regular ? .title2 : .headline)
                 Spacer()
                 Text("¥\(item.totalAmount.formattedWithSeparator())")
                     .font(sizeClass == .regular ? .title2 : .subheadline)
             }
             
-            ForEach(item.userAmounts.keys.sorted(), id: \.self) { user in
+            ForEach(item.userAmounts.keys.sorted(), id: \.self) { userId in
+                let userName = users.first(where: { $0.id == userId })?.name ?? "削除済みユーザー"
+                
                 HStack {
-                    Text(user)
+                    Text(userName)
                         .font(sizeClass == .regular ? .title2 : .subheadline)
                         .foregroundColor(.gray)
+                    
                     Spacer()
-                    Text("¥\(item.userAmounts[user] ?? 0)")
+                    
+                    Text("¥\(item.userAmounts[userId] ?? 0)")
                         .font(sizeClass == .regular ? .title2 : .subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -222,6 +239,7 @@ struct ExpenseRowView: View {
 struct TotalSummaryView: View {
     @Environment(\.horizontalSizeClass) var sizeClass
     let items: [ExpenseItem]
+    let users: [User]
     
     var body: some View {
         VStack(spacing: 8) {
@@ -232,16 +250,27 @@ struct TotalSummaryView: View {
                     .bold()
             }
             
-            let users = Array(items.flatMap { $0.userAmounts.keys }).removingDuplicates()
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+            // 支出に登場している userId 一覧
+            let userIds = Array(
+                Set(items.flatMap { $0.userAmounts.keys })
+            )
+            
+            let columns = Array(
+                repeating: GridItem(.flexible(), spacing: 8),
+                count: sizeClass == .regular ? 3 : 2
+            )
             
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(users, id: \.self) { user in
+                ForEach(userIds, id: \.self) { userId in
+                    let userName =
+                    users.first(where: { $0.id == userId })?.name
+                    ?? "削除済みユーザー"
+                    
                     VStack(spacing: 4) {
-                        Text(user)
+                        Text(userName)
                             .font(sizeClass == .regular ? .title2 : .subheadline)
                             .bold()
-                        Text("¥\(userTotal(user).formattedWithSeparator())")
+                        Text("¥\(userTotal(userId).formattedWithSeparator())")
                             .font(sizeClass == .regular ? .title2 : .footnote)
                     }
                 }
@@ -259,7 +288,7 @@ struct TotalSummaryView: View {
         items.map { $0.totalAmount }.reduce(0, +)
     }
     
-    func userTotal(_ user: String) -> Int {
+    func userTotal(_ user: User.ID) -> Int {
         items.map { $0.userAmounts[user] ?? 0 }.reduce(0, +)
     }
 }
@@ -295,16 +324,21 @@ extension Array where Element: Hashable {
 #Preview {
     let sampleData = ExpenseData()
 
+        let users = [
+            User(name: "愛利"),
+            User(name: "太郎")
+        ]
+
         let sampleCategory = CategoryModel(
             name: "披露宴",
-            users: ["愛利", "太郎"],
+            users: users,
             iconName: "folder.fill",
-            categoryList: ["会場費", "料理", "装花"],
+            categoryList: [CategoryItem(name:"会場費")],
             createdAt: Date()
         )
 
         let sampleViewModel = CategoryViewModel(category: sampleCategory)
 
-        return ContentView(viewModel: sampleViewModel)
+        ContentView(viewModel: sampleViewModel)
             .environmentObject(sampleData)
 }

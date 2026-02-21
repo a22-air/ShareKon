@@ -11,7 +11,7 @@ import Firebase
 struct MainView: View {
     @StateObject var expenseData = ExpenseData() // 中カテゴリ
     @StateObject var listVM = CategoryListViewModel() // データ読み込みと表示
-    @State private var userNames: [String] = []
+    @State private var users: [User] = []
     @State private var showAddCategorySheet = false
     @State private var newCategoryName = ""
     @State private var selectedIcon: String = "folder.fill"
@@ -89,15 +89,15 @@ struct MainView: View {
         .sheet(isPresented: $showAddCategorySheet) {
             AddCategorySheet(
                 newCategoryName: $newCategoryName,
-                userNames: $userNames,
+                users: $users,
                 selectedIcon: $selectedIcon,
                 onSave: { //保存ロジックはメインで管理
                     let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
-                    guard !trimmed.isEmpty, !userNames.isEmpty else { return }
+                    guard !trimmed.isEmpty, !users.isEmpty else { return }
                     
                     let newCategory = CategoryModel(
                         name: trimmed,
-                        users: userNames,
+                        users: users,
                         iconName: selectedIcon
                     )
                     
@@ -107,7 +107,7 @@ struct MainView: View {
                             try await newViewModel.saveCategory()
                             
                             newCategoryName = ""
-                            userNames.removeAll()
+                            users.removeAll()
                             selectedIcon = "folder.fill"
                             showAddCategorySheet = false
                         } catch {
@@ -210,10 +210,15 @@ struct MainView: View {
 extension CategoryListViewModel {
     static var preview: CategoryListViewModel {
         let vm = CategoryListViewModel()
+        let users = [
+            User(name: "愛利"),
+            User(name: "太郎")
+        ]
+
         vm.categories = [
             CategoryModel(
                 name: "食費",
-                users: ["A", "B"],
+                users: users,
                 iconName: "cart.fill"
             )
         ]

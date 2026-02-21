@@ -29,13 +29,13 @@ struct CustomCheckBox: View {
 
 struct AddView: View {
     @Environment(\.dismiss) var dismiss
-    @State var selectedUser: String? = nil
+    @State var selectedUser: User? = nil
     @State private var amount: String = ""
-    @State var selectedCategory: String? = nil
+    @State var selectedCategory: CategoryItem? = nil
     @State private var date = Date()
-    @State private var userAmounts: [String: String] = [:]
+    @State private var userAmounts: [User.ID: String] = [:]
     @State private var checked = false
-    @State private var selectedUsers: [String] = []
+    @State private var selectedUsers: [User] = []
     @State private var isPaid: Bool = false // ← 精算済みかどうか
     @ObservedObject var viewModel: CategoryViewModel
     @ObservedObject var vm: AddExpenseViewModel
@@ -54,7 +54,7 @@ struct AddView: View {
         
         NavigationView{
             
-            List{
+            List {
                 // カテゴリ選択
                 CommonSelectView(
                     items: $viewModel.category.categoryList,
@@ -63,46 +63,42 @@ struct AddView: View {
                         categories: $viewModel.category.categoryList,
                         selectedCategory: $vm.selectedCategory)
                 )
-                // カレンダー表示
+
+                // 日付
                 DatePicker(
-                    selection: Binding(
-                        get: { date },   // nil の場合は今日
-                        set: { date = $0 } // 選択した日を date にセット
-                    ),
+                    selection: $date,
                     displayedComponents: [.date]
                 ) {
-                    // ラベルに表示する文字列
                     Text("日付")
                 }
                 .environment(\.locale, Locale(identifier: "ja_JP"))
-                
+
+                // 登録ユーザー（複数選択）
                 VStack(alignment: .leading, spacing: 10) {
-                    
                     NavigationLink(destination:
-                                    SelectUserView(users: $viewModel.category.users, selectedUser: $selectedUser)
+                        SelectUserView(users: $viewModel.category.users, selectedUser: $selectedUser)
                     ) {
-                        
                         if viewModel.category.users.isEmpty {
-                            // 登録ユーザーがない場合
                             Text("ユーザーを追加してください")
                                 .foregroundColor(.red)
                         } else {
-                            // 登録ユーザーがある場合
                             VStack(alignment: .leading, spacing: 8) {
-                                ForEach(viewModel.category.users, id: \.self) { user in
+                                ForEach(viewModel.category.users, id: \.id) { user in
                                     HStack {
                                         CustomCheckBox(
                                             isChecked: Binding(
-                                                get: { selectedUsers.contains(user) },
+                                                get: { selectedUsers.contains(where: { $0.id == user.id }) },
                                                 set: { checked in
                                                     if checked {
-                                                        selectedUsers.append(user)
+                                                        if !selectedUsers.contains(where: { $0.id == user.id }) {
+                                                            selectedUsers.append(user)
+                                                        }
                                                     } else {
-                                                        selectedUsers.removeAll { $0 == user }
+                                                        selectedUsers.removeAll { $0.id == user.id }
                                                     }
                                                 }
                                             ),
-                                            label: user
+                                            label: user.name
                                         )
                                         Spacer()
                                     }
@@ -111,43 +107,43 @@ struct AddView: View {
                             .padding(.horizontal, 8)
                         }
                     }
-                    
                 }
-                
+
+                // 金額入力
                 ForEach(selectedUsers.indices, id: \.self) { index in
                     let user = selectedUsers[index]
 
-                    // 金額用 Binding
+                    // 金額バインディング
                     let binding = Binding(
-                        get: { userAmounts[user] ?? "" },
-                        set: { userAmounts[user] = $0 }
+                        get: { userAmounts[user.id] ?? "" },
+                        set: { userAmounts[user.id] = $0 }
                     )
 
                     HStack {
-                        // ユーザー名 Picker
+
+                        // Picker（User 選択）
                         Picker("", selection: Binding(
                             get: { selectedUsers[index] },
                             set: { newUser in
                                 let oldUser = selectedUsers[index]
 
-                                // 名前差し替え
+                                // 差し替え
                                 selectedUsers[index] = newUser
 
-                                // 金額を引き継ぐ
-                                if let amount = userAmounts[oldUser] {
-                                    userAmounts[newUser] = amount
+                                // 金額引き継ぎ
+                                if let amount = userAmounts[oldUser.id] {
+                                    userAmounts[newUser.id] = amount
                                 }
-                                userAmounts[oldUser] = nil
+                                userAmounts[oldUser.id] = nil
                             }
                         )) {
                             ForEach(
                                 viewModel.category.users.filter {
-                                    $0 == selectedUsers[index] || !selectedUsers.contains($0)
+                                    $0.id == selectedUsers[index].id || !selectedUsers.contains(where: { $0.id == $0.id })
                                 },
-                                id: \.self
-                            ){ user in
-                                Text(user).tag(user)
-                                    
+                                id: \.id
+                            ) { user in
+                                Text(user.name).tag(user)
                             }
                         }
                         .pickerStyle(.menu)
@@ -162,10 +158,11 @@ struct AddView: View {
                                 formatCurrency(newValue, for: user)
                             }
 
-                        // 削除ボタン
+                        // 削除
                         Button {
+                            let u = selectedUsers[index]
                             selectedUsers.remove(at: index)
-                            userAmounts[user] = nil
+                            userAmounts[u.id] = nil
                         } label: {
                             Image(systemName: "trash")
                                 .foregroundColor(.red)
@@ -174,45 +171,41 @@ struct AddView: View {
                     }
                     .padding(.leading, 16)
                 }
-                
+
+                // 精算ボタン
                 HStack(spacing: 8) {
-                    // 未精算ボタン
-                    Button(action: {
-                        isPaid = false
-                        print("未精算に変更: isPaid = \(isPaid)")
-                    }) {
+                    Button(action: { isPaid = false }) {
                         Text("未精算")
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
+                            .padding(6)
                             .background(!isPaid ? Color.red : Color.gray.opacity(0.2))
                             .foregroundColor(!isPaid ? .white : .black)
                             .cornerRadius(8)
-                    }.buttonStyle(PlainButtonStyle())
-                    
-                    // 精算済みボタン
-                    Button(action: {
-                        isPaid = true
-                        print("精算済みに変更: isPaid = \(isPaid)")
-                    }) {
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: { isPaid = true }) {
                         Text("精算済み")
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
+                            .padding(6)
                             .background(isPaid ? Color.green : Color.gray.opacity(0.2))
                             .foregroundColor(isPaid ? .white : .black)
                             .cornerRadius(8)
-                    }.buttonStyle(PlainButtonStyle())
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.vertical, 4)
-                
+
+                // 合計
                 if selectedUsers.count > 1 {
                     HStack {
                         Text("合計")
                             .frame(width: 80, alignment: .leading)
                             .font(.headline)
                             .bold()
-                        
+
                         Text("\(calculateTotal().formatted(.currency(code: "JPY")))")
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .font(.headline)
@@ -221,7 +214,6 @@ struct AddView: View {
                     .padding(.leading, 16)
                     .cornerRadius(8)
                 }
-                
             }
             .onAppear {
                 setupEditingItem()
@@ -262,11 +254,11 @@ struct AddView: View {
     } // View
     
     // 日本円フォーマット関数
-    func formatCurrency(_ value: String, for user: String) {
+    func formatCurrency(_ value: String, for user: User) {
         // 数字だけ抽出
         let digits = value.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
         guard let number = Int(digits) else {
-            userAmounts[user] = ""
+            userAmounts[user.id] = ""
             return
         }
         
@@ -277,9 +269,8 @@ struct AddView: View {
         formatter.maximumFractionDigits = 0
         
         if let formatted = formatter.string(from: NSNumber(value: number)) {
-            userAmounts[user] = formatted
+            userAmounts[user.id] = formatted
         }
-        print("userAmounts",userAmounts)
     }
     
     // 保存ボタンアクション
@@ -287,14 +278,20 @@ struct AddView: View {
 
         // Preview では保存しない
         guard !ProcessInfo.isPreview else { return }
-
+        // カテゴリを安全に取得
+        guard let category =
+            vm.selectedCategory
+            ?? viewModel.category.categoryList.first
+        else {
+            return
+        }
         // ユーザーごとの金額を Int に変換
-        var amounts: [String: Int] = [:]
+        var amounts: [User.ID: Int] = [:]
         for user in selectedUsers {
-            let value = userAmounts[user]?
+            let value = userAmounts[user.id]?
                 .replacingOccurrences(of: "¥", with: "")
                 .replacingOccurrences(of: ",", with: "") ?? "0"
-            amounts[user] = Int(value) ?? 0
+            amounts[user.id] = Int(value) ?? 0
         }
 
         let total = amounts.values.reduce(0, +)
@@ -303,8 +300,7 @@ struct AddView: View {
         let itemToSave: ExpenseItem
         if var editing = editingItem {
             // 編集（上書き）
-            editing.category = vm.selectedCategory
-                ?? viewModel.category.categoryList.first!
+            editing.category = category
             editing.date = date
             editing.totalAmount = total
             editing.userAmounts = amounts
@@ -313,7 +309,7 @@ struct AddView: View {
         } else {
             // 新規作成
             itemToSave = ExpenseItem(
-                category: vm.selectedCategory ?? viewModel.category.categoryList.first!,
+                category: category,
                 date: date,
                 totalAmount: total,
                 userAmounts: amounts,
@@ -344,7 +340,7 @@ struct AddView: View {
     func calculateTotal() -> Int {
         let total = selectedUsers.reduce(0) { sum, user in
             // ユーザーの金額文字列から数字だけ取り出す
-            let amountString = userAmounts[user]?
+            let amountString = userAmounts[user.id]?
                 .replacingOccurrences(of: "¥", with: "")
                 .replacingOccurrences(of: ",", with: "") ?? "0"
             return sum + (Int(amountString) ?? 0)
@@ -359,15 +355,21 @@ struct AddView: View {
         selectedCategory = item.category
         date = item.date
         isPaid = item.isPaid
-        userAmounts = item.userAmounts.mapValues { "\($0)" }
-        selectedUsers = Array(item.userAmounts.keys)
+        userAmounts = item.userAmounts.mapValues { String($0) }
+        selectedUsers = viewModel.category.users.filter { user in
+            item.userAmounts.keys.contains(user.id)
+        }
     }
 }
 
 #Preview {
+    let users = [
+        User(name: "愛利"),
+        User(name: "太郎")
+    ]
     let sampleCategory = CategoryModel(
         name: "披露宴",
-        users: ["愛利", "太郎"],
+        users: users,
         iconName: "folder.fill",
         createdAt: Date()
     )

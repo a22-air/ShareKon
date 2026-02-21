@@ -10,16 +10,16 @@ import Foundation
 struct CategoryModel: Identifiable, Codable, Equatable {
     let id: String
     var name: String
-    var users: [String] = []       // ユーザー名（UID なし、個人管理用）
+    var users: [User] = []
     var iconName: String
-    var categoryList: [String] = []
+    var categoryList: [CategoryItem] = []
     var createdAt: Date? // 登録順を安定させるために作成
     // idを指定可能に変更
     init(id: String = UUID().uuidString,
          name: String,
-         users: [String] = [],
+         users: [User] = [],
          iconName: String = "folder.fill",
-         categoryList: [String] = [],
+         categoryList: [CategoryItem] = [],
          createdAt: Date? = nil
     ) {
         self.id = id

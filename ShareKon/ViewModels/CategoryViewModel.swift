@@ -26,43 +26,54 @@ class CategoryViewModel: ObservableObject {
     //     カテゴリを Firestore に保存
     func saveCategory() async throws {
         let ref = db.collection("categories").document(category.id)
-        try await ref.setData([
-            "name": category.name,
-            "users": category.users,
-            "iconName": category.iconName,
-            "categoryList": category.categoryList,
-            "createdAt": FieldValue.serverTimestamp()
-        ], merge: true)
-        
-        // 書き込み後の値を取得（待つ）
-        let snap = try await ref.getDocument()
-        if let ts = snap.data()?["createdAt"] as? Timestamp {
-            category.createdAt = ts.dateValue()
-        }
+
+            // Firestore 用に変換
+            let usersData = category.users.map { $0.id.uuidString }
+            let categoryListData = category.categoryList.map { $0.name }
+
+            try await ref.setData([
+                "name": category.name,
+                "users": usersData,                 // [String]
+                "iconName": category.iconName,
+                "categoryList": categoryListData,   // [String]
+                "createdAt": FieldValue.serverTimestamp()
+            ], merge: true)
+
+            // serverTimestamp を確定させるため再取得
+            let snap = try await ref.getDocument()
+            if let ts = snap.data()?["createdAt"] as? Timestamp {
+                category.createdAt = ts.dateValue()
+            }
     }
     
     // ExpenseItem を Firestore に保存
     func saveExpenseItem(_ item: ExpenseItem, isNew: Bool) async throws {
         let ref = db.collection("categories")
-            .document(category.id)
-            .collection("items")
-            .document(item.id)
-        
-        var data: [String: Any] = [
-            "category": item.category,
-            "date": Timestamp(date: item.date),
-            "totalAmount": item.totalAmount,
-            "userAmounts": item.userAmounts,
-            "isPaid": item.isPaid
-        ]
-        
-        if isNew {
-            data["createdAt"] = FieldValue.serverTimestamp()
-        } else {
-            data["updatedAt"] = FieldValue.serverTimestamp()
-        }
-        
-        try await ref.setData(data, merge: false)
+                .document(category.id)
+                .collection("items")
+                .document(item.id)
+
+            // 🔽 Firestore 用に変換
+            let userAmountsData: [String: Int] =
+                Dictionary(uniqueKeysWithValues: item.userAmounts.map {
+                    ($0.key.uuidString, $0.value)
+                })
+
+            var data: [String: Any] = [
+                "category": item.category.name,   // ✅ String にする
+                "date": Timestamp(date: item.date),
+                "totalAmount": item.totalAmount,
+                "userAmounts": userAmountsData,   // ✅ [String: Int]
+                "isPaid": item.isPaid
+            ]
+
+            if isNew {
+                data["createdAt"] = FieldValue.serverTimestamp()
+            } else {
+                data["updatedAt"] = FieldValue.serverTimestamp()
+            }
+
+            try await ref.setData(data, merge: true)
         
     }
     
@@ -73,32 +84,47 @@ class CategoryViewModel: ObservableObject {
             print("⚠️ listenItems は既に登録済み")
             return
         }
-        
+
         itemsListener = db.collection("categories")
             .document(category.id)
             .collection("items")
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self,
                       let docs = snapshot?.documents else { return }
-                
-                let fetchedItems = docs.map { doc -> ExpenseItem in
+
+                let fetchedItems: [ExpenseItem] = docs.compactMap { doc in
                     let data = doc.data()
+
                     let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
-                    
+                    let date = (data["date"] as? Timestamp)?.dateValue() ?? Date()
+
+                    // Firestore [String: Int] → App [User.ID: Int]
+                    let rawUserAmounts = data["userAmounts"] as? [String: Int] ?? [:]
+                    var userAmounts: [User.ID: Int] = [:]
+                    for (key, value) in rawUserAmounts {
+                        if let uuid = UUID(uuidString: key) {
+                            userAmounts[uuid] = value
+                        }
+                    }
+
+                    let categoryName = data["category"] as? String ?? ""
+                    let categoryItem = CategoryItem(name: categoryName)
+
                     return ExpenseItem(
                         id: doc.documentID,
-                        category: data["category"] as? String ?? "",
-                        date: (data["date"] as? Timestamp)?.dateValue() ?? Date(),
+                        category: categoryItem,
+                        date: date,
                         totalAmount: data["totalAmount"] as? Int ?? 0,
-                        userAmounts: data["userAmounts"] as? [String: Int] ?? [:],
+                        userAmounts: userAmounts,
                         isPaid: data["isPaid"] as? Bool ?? false,
                         createdAt: createdAt
                     )
                 }
-                
+
                 self.applyFetchedItems(fetchedItems)
             }
     }
+
     // 差分更新ロジック
     private func applyFetchedItems(_ fetched: [ExpenseItem]) {
         DispatchQueue.main.async {

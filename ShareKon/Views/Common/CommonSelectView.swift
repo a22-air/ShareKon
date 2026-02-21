@@ -8,16 +8,16 @@
 import SwiftUI
 
 struct CommonSelectView<Destination: View>: View {
-    @Binding var items: [String]
-    @Binding var selectedItem: String?
+    @Binding var items: [CategoryItem]
+    @Binding var selectedItem: CategoryItem?
     let destination: Destination
     var placeholder: String { "カテゴリーを追加してください" }
     
     var displayText: String {
         if let selectedItem {
-            return selectedItem
+            return selectedItem.name
         } else if let first = items.first {
-            return first
+            return first.name
         } else {
             return placeholder
         }
@@ -44,8 +44,8 @@ struct CommonSelectView<Destination: View>: View {
     }
     
     struct CommonSelectViewPreviewWrapper: View {
-        @State var items: [String] = ["食費", "交通費", "娯楽費"]
-        @State var selectedItem: String? = "食費"
+        @State var items: [CategoryItem] = [CategoryItem(name:"食費"), CategoryItem(name:"交通費")]
+        @State var selectedItem: CategoryItem? = CategoryItem(name: "食費")
         
         var body: some View {
             NavigationStack {

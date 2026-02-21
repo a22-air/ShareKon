@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct CommonAddLayout: View {
+struct CommonAddLayout<Item: NameIdentifiable>: View {
     let title: String                 // 画面タイトル（例："カテゴリ一覧"）
     let placeholder: String           // テキストフィールドのプレースホルダ
     @Binding var inputText: String    // 入力テキスト
-    @Binding var items: [String]      // リストデータ
-    @Binding var selectedItem: String? // 選択中の項目
+    @Binding var items: [Item]      // リストデータ
+    @Binding var selectedItem: Item? // 選択中の項目
     @Environment(\.dismiss) private var dismiss
     @State private var pressedItem: String? = nil   // タップ中の行を保持
     @FocusState private var isFocused: Bool
@@ -41,28 +41,25 @@ struct CommonAddLayout: View {
             
             // リスト
             List {
-                ForEach(items.indices, id: \.self) { index in
-                    let item = items[index]
-                    
+                ForEach($items) { $item in
                     HStack {
                         if isEditing {
                             EditingView(
-                                item: $items[index],
+                                item: $item,
                                 items: $items,
                                 selectedItem: $selectedItem
                             )
                         } else {
-                            Text(item)
+                            Text(item.name)
                                 .foregroundColor(.black)
                         }
                     }
-                    .contentShape(Rectangle()) // 行全体タップ可
+                    .contentShape(Rectangle())
                     .onTapGesture {
-                        guard !isEditing else { return } // 編集中は選択させない
+                        guard !isEditing else { return }
                         selectedItem = item
                         dismiss()
                     }
-                    
                 }
                 .onMove { source, destination in
                     if isEditing {
@@ -70,6 +67,7 @@ struct CommonAddLayout: View {
                     }
                 }
             }
+
             .cornerRadius(8)
             
         }
@@ -89,15 +87,15 @@ struct CommonAddLayout: View {
     }
     
     struct EditingView: View {
-        @Binding var item: String
-        @Binding var items: [String]
-        @Binding var selectedItem: String?
+        @Binding var item: Item
+        @Binding var items: [Item]
+        @Binding var selectedItem: Item?
         
         var body: some View {
             HStack {
                 Button {
-                    items.removeAll { $0 == item }
-                    if selectedItem == item {
+                    items.removeAll { $0.id == item.id }
+                    if selectedItem?.id == item.id {
                         selectedItem = nil
                     }
                 } label: {
@@ -106,7 +104,7 @@ struct CommonAddLayout: View {
                 }
                 .buttonStyle(.borderless)
                 
-                TextField("", text: $item)
+                TextField("", text: $item.name)
                     .textFieldStyle(.roundedBorder)
             }
         }
@@ -116,9 +114,10 @@ struct CommonAddLayout: View {
     private func addItem() {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        items.append(trimmed)
-        inputText = "" // 入力欄クリア
         
+        let newItem = Item(id: UUID(), name: trimmed)
+        items.append(newItem)
+        inputText = ""
     }
 
 }
@@ -128,7 +127,9 @@ struct CommonAddLayout: View {
         title: "カテゴリ一覧",
         placeholder: "カテゴリを追加",
         inputText: .constant(""),
-        items: .constant(["カテゴリA", "カテゴリB"]),
+        items: .constant([
+                    CategoryItem(id: UUID(), name: "カテゴリA")
+                ]),
         selectedItem: .constant(nil)
     )
 }

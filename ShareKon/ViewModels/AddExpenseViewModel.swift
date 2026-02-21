@@ -7,7 +7,7 @@
 
 import Foundation
 class AddExpenseViewModel: ObservableObject {
-    @Published var selectedCategory: String?
+    @Published var selectedCategory: CategoryItem?
     
     func setupForEdit(item: ExpenseItem) {        
         selectedCategory = item.category

@@ -8,20 +8,20 @@
 import Foundation
 struct ExpenseItem: Identifiable {
     let id: String
-    var category: String
+    var category: CategoryItem
     var date: Date
     var totalAmount: Int
-    var userAmounts: [String: Int]
+    var userAmounts: [UUID: Int]
     var isPaid: Bool = false
     var createdAt: Date? // 登録順を安定させるために作成
     
     // Firestore から復元する用イニシャライザ
     init(
         id: String,
-        category: String,
+        category: CategoryItem,
         date: Date,
         totalAmount: Int,
-        userAmounts: [String: Int],
+        userAmounts: [UUID: Int],
         isPaid: Bool = false,
         createdAt: Date? = nil
     ) {
@@ -36,10 +36,10 @@ struct ExpenseItem: Identifiable {
 
     // 新規作成用イニシャライザ
     init(
-        category: String,
+        category: CategoryItem,
         date: Date,
         totalAmount: Int,
-        userAmounts: [String: Int],
+        userAmounts: [UUID: Int],
         isPaid: Bool = false,
         createdAt: Date? = nil
     ) {

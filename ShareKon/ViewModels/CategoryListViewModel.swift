@@ -21,24 +21,38 @@ class CategoryListViewModel: ObservableObject {
     // データ読み込み
     func fetchCategories() {
         db.collection("categories").addSnapshotListener { [weak self] snapshot, error in
-            guard let docs = snapshot?.documents else { return }
-            let cats = docs.map { doc -> CategoryModel in
-                let data = doc.data()
-                let name = data["name"] as? String ?? ""
-                let users = data["users"] as? [String] ?? []
-                let iconName = data["iconName"] as? String ?? "folder.fill"
-                let categoryList = data["categoryList"] as? [String] ?? []
-                let createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
-                return CategoryModel(
-                    name: name,
-                    users: users,
-                    iconName: iconName,
-                    categoryList: categoryList,
-                    createdAt: createdAt
-                )
+                guard let self else { return }
+                guard let documents = snapshot?.documents else { return }
+
+                let categories: [CategoryModel] = documents.map { doc in
+                    let data = doc.data()
+
+                    let name = data["name"] as? String ?? ""
+                    let iconName = data["iconName"] as? String ?? "folder.fill"
+                    let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
+
+                    let userNames = data["users"] as? [String] ?? []
+                    let users: [User] = userNames.map {
+                        User(name: $0)
+                    }
+
+                    let categoryNames = data["categoryList"] as? [String] ?? []
+                    let categoryItems: [CategoryItem] = categoryNames.map {
+                        CategoryItem(name: $0)
+                    }
+
+                    return CategoryModel(
+                        id: doc.documentID,
+                        name: name,
+                        users: users,
+                        iconName: iconName,
+                        categoryList: categoryItems,
+                        createdAt: createdAt
+                    )
+                }
+
+                self.categories = categories
             }
-            self?.categories = cats
-        }
     }
     
     // データ表示
@@ -48,19 +62,31 @@ class CategoryListViewModel: ObservableObject {
                 guard let self else { return }
                 guard let docs = snapshot?.documents else { return }
                 
-                let list = docs.compactMap { doc -> CategoryModel? in
+                let list: [CategoryModel] = docs.compactMap { doc in
                     let data = doc.data()
+                    
                     let name = data["name"] as? String ?? ""
-                    let users = data["users"] as? [String] ?? []
                     let iconName = data["iconName"] as? String ?? "folder.fill"
-                    let categoryList = data["categoryList"] as? [String] ?? []
-                    let createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
+                    let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
+                    
+                    // 🔽 users: [String] → [User]
+                    let userNames = data["users"] as? [String] ?? []
+                    let users: [User] = userNames.map {
+                        User(name: $0)
+                    }
+                    
+                    // 🔽 categoryList: [String] → [CategoryItem]
+                    let categoryNames = data["categoryList"] as? [String] ?? []
+                    let categoryItems: [CategoryItem] = categoryNames.map {
+                        CategoryItem(name: $0)
+                    }
+                    
                     return CategoryModel(
                         id: doc.documentID,
                         name: name,
                         users: users,
                         iconName: iconName,
-                        categoryList: categoryList,
+                        categoryList: categoryItems,
                         createdAt: createdAt
                     )
                 }
@@ -72,6 +98,7 @@ class CategoryListViewModel: ObservableObject {
                 }
             }
     }
+    
     
 }
 extension ProcessInfo {

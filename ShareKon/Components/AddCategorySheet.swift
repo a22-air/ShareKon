@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddCategorySheet: View {
     @Binding var newCategoryName: String
-    @Binding var userNames: [String]
+    @Binding var users: [User]
     @Binding var selectedIcon: String
     @FocusState private var isFocused: Bool
     @State var newUserName: String = ""
@@ -55,26 +55,26 @@ struct AddCategorySheet: View {
                     Button("名前追加") {
                         let trimmed = newUserName.trimmingCharacters(in: .whitespaces)
                         guard !trimmed.isEmpty else { return }
-                        userNames.append(trimmed)
+                        users.append(User(name:trimmed))
                         newUserName = ""
                         isFocused = false
                     }
                     .buttonStyle(.borderedProminent)
                 }
                 
-                if !userNames.isEmpty {
+                if !users.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(userNames, id: \.self) { name in
+                            ForEach(users, id: \.self) { user in
                                 HStack(spacing: 4) {
-                                    Text(name)
+                                    Text(user.name)
                                         .padding(.vertical, 6)
                                         .padding(.horizontal, 10)
                                         .background(Color.gray.opacity(0.2))
                                         .cornerRadius(16)
                                     
                                     Button(action: {
-                                        userNames.removeAll { $0 == name }
+                                        users.removeAll { $0.id == user.id }
                                     }) {
                                         Image(systemName: "xmark.circle.fill")
                                             .foregroundColor(.red)
@@ -117,14 +117,14 @@ struct AddCategorySheet: View {
                     .padding()
             }
             .background(
-                newCategoryName.isEmpty || userNames.isEmpty
+                newCategoryName.isEmpty || users.isEmpty
                 ? Color.gray
                 : Color.blue
             )
             .cornerRadius(12)
             .padding(.horizontal, 20)
             .padding(.top, 50)
-            .disabled(newCategoryName.isEmpty || userNames.isEmpty)
+            .disabled(newCategoryName.isEmpty || users.isEmpty)
             
             Spacer()
             
@@ -143,13 +143,13 @@ struct AddCategorySheet: View {
 struct AddCategorySheetPreviewWrapper: View {
     @State var newCategoryName = "結婚式"
     @State var newUserName = "愛利"
-    @State var userNames: [String] = []
+    @State var users: [User] = []
     @State var selectedIcons: String = "folder.fill"
     
     var body: some View {
         AddCategorySheet(
             newCategoryName: $newCategoryName,
-            userNames: $userNames,
+            users: $users,
             selectedIcon: $selectedIcons,
             newUserName: newUserName,
             onSave: {},
