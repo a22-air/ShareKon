@@ -42,7 +42,7 @@ class CategoryViewModel: ObservableObject {
             "iconName": category.iconName,
             "categoryList": categoryListData,
             "createdAt": FieldValue.serverTimestamp()
-        ], merge: true)
+        ], merge: false)
         
         // serverTimestamp を確定させるため再取得
         let snap = try await ref.getDocument()
@@ -65,10 +65,10 @@ class CategoryViewModel: ObservableObject {
                 })
 
             var data: [String: Any] = [
-                "category": item.category.name,   // ✅ String にする
+                "category": item.category.name,
                 "date": Timestamp(date: item.date),
                 "totalAmount": item.totalAmount,
-                "userAmounts": userAmountsData,   // ✅ [String: Int]
+                "userAmounts": userAmountsData,
                 "isPaid": item.isPaid
             ]
 
@@ -78,7 +78,7 @@ class CategoryViewModel: ObservableObject {
                 data["updatedAt"] = FieldValue.serverTimestamp()
             }
 
-            try await ref.setData(data, merge: true)
+            try await ref.setData(data, merge: false)
         
     }
     

@@ -277,13 +277,13 @@ struct AddView: View {
 
         // Preview では保存しない
         guard !ProcessInfo.isPreview else { return }
+
         // カテゴリを安全に取得
         guard let category =
             vm.selectedCategory
             ?? viewModel.category.categoryList.first
-        else {
-            return
-        }
+        else { return }
+
         // ユーザーごとの金額を Int に変換
         var amounts: [User.ID: Int] = [:]
         for user in selectedUsers {
@@ -293,7 +293,12 @@ struct AddView: View {
             amounts[user.id] = Int(value) ?? 0
         }
 
+        // ログ：変換後の amounts を確認
+        print("▶ selectedUsers: \(selectedUsers.map { $0.name })")
+        print("▶ amounts: \(amounts)")
+
         let total = amounts.values.reduce(0, +)
+        print("▶ totalAmount: \(total)")
 
         // === 保存する ExpenseItem を作成 ===
         let itemToSave: ExpenseItem
@@ -302,7 +307,19 @@ struct AddView: View {
             editing.category = category
             editing.date = date
             editing.totalAmount = total
-            editing.userAmounts = amounts
+
+            // selectedUsers に存在するユーザーだけを残す
+            var filteredAmounts: [User.ID: Int] = [:]
+            for user in selectedUsers {
+                if let amount = amounts[user.id] {
+                    filteredAmounts[user.id] = amount
+                }
+            }
+
+            // ログ：保存前の filteredAmounts を確認
+            print("▶ filteredAmounts (保存予定): \(filteredAmounts)")
+
+            editing.userAmounts = filteredAmounts
             editing.isPaid = isPaid
             itemToSave = editing
         } else {
@@ -314,6 +331,7 @@ struct AddView: View {
                 userAmounts: amounts,
                 isPaid: isPaid
             )
+            print("▶ 新規作成 userAmounts: \(amounts)")
         }
 
         Task {
@@ -327,10 +345,11 @@ struct AddView: View {
                     isNew: editingItem == nil
                 )
 
+                print("✅ Firestore 保存成功")
                 dismiss()
 
             } catch {
-                print("Firestore 保存失敗: \(error)")
+                print("❌ Firestore 保存失敗: \(error)")
             }
         }
     }
