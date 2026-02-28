@@ -52,8 +52,10 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                         } else {
                             Text(item.name)
                                 .foregroundColor(.black)
+                            Spacer()
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         guard !isEditing else { return }
