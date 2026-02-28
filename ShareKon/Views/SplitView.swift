@@ -22,6 +22,7 @@ struct SplitView: View {
     @State private var showUnpaid = false // 未精算
     @Binding var selectedTab: Int
     @State private var isCalculating = false
+    
     var category: CategoryModel //どのカテゴリかRecognize
     private var categoryItems: [ExpenseItem] {
         viewModel.items
@@ -265,14 +266,22 @@ struct SplitView: View {
     
     // MARK: - Computed for totals
     private var uniqueUsers: [User] {
-        let users = categoryItems.flatMap { item in
-            item.userAmounts.keys.compactMap { userId in
-                viewModel.category.users.first { $0.id == userId }
+        var seen = Set<User.ID>()
+        return categoryItems
+            .flatMap { item in
+                item.userAmounts.keys.compactMap { userId in
+                    viewModel.category.users.first { $0.id == userId }
+                }
             }
-        }
-        return Array(Set(users))
+            .filter { user in
+                if seen.contains(user.id) {
+                    return false
+                } else {
+                    seen.insert(user.id)
+                    return true
+                }
+            }
     }
-
     // 精算済み合計
     private var paidTotal: Int {
         categoryItems.filter { $0.isPaid }.map { $0.totalAmount }.reduce(0, +)
