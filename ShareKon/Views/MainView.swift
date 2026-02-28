@@ -54,7 +54,14 @@ struct MainView: View {
                 categoryList
             }
         }
-        .onChange(of: listVM.categories.map(\.id)) {
+        .onChange(of: listVM.categories.map(\.id)) { _, newIDs in
+            // カテゴリが空になったら編集モード解除
+            if newIDs.isEmpty {
+                isEditing = false
+                categoryViewModels.removeAll()
+                return
+            }
+
             for category in listVM.categories {
                 if categoryViewModels[category.id] == nil {
                     categoryViewModels[category.id] = CategoryViewModel(category: category)
