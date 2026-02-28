@@ -119,6 +119,7 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
         let newItem = Item(id: UUID(), name: trimmed)
         items.append(newItem)
         inputText = ""
+        isFocused = false
     }
 
 }
