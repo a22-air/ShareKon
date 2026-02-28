@@ -46,7 +46,7 @@ struct AddView: View {
         return calculateTotal() == 0
     }
     var isCategoryInvalid: Bool {
-        viewModel.category.categoryList.isEmpty
+        draftCategories.isEmpty || draftSelectedCategory == nil
     }
     
     // 編集する場合の ExpenseItem
@@ -236,6 +236,9 @@ struct AddView: View {
             }
             .onAppear {
                 setupEditingItem()
+                if draftSelectedCategory == nil {
+                    draftSelectedCategory = draftCategories.first
+                }
             }
             .toolbar {
                 // 左上：キャンセルボタン
