@@ -27,7 +27,35 @@ struct SplitView: View {
     private var categoryItems: [ExpenseItem] {
         viewModel.items
     }
-   
+    // 計算に使う
+    var normalizedRatios: [User.ID: Double] {
+        let total = userValues.values.reduce(0, +)
+        guard total > 0 else { return [:] }
+
+        return userValues.mapValues {
+            Double($0) / Double(total)
+        }
+    }
+    private var allUsers: [User] {
+        viewModel.category.users
+    }
+    // 精算済み合計
+    private var paidTotal: Int {
+        categoryItems.filter { $0.isPaid }.map { $0.totalAmount }.reduce(0, +)
+    }
+    // 未精算合計
+    private var unpaidTotal: Int {
+        categoryItems.filter { !$0.isPaid }.map { $0.totalAmount }.reduce(0, +)
+    }
+    // 全ての合計
+    private var total: Int { paidTotal + unpaidTotal }
+    
+    private let numberFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .none
+        return f
+    }()
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -57,10 +85,10 @@ struct SplitView: View {
                     Text("割り勘比率")
                         .font(.headline)
                     
-                    ForEach(uniqueUsers) { user in
+                    ForEach(viewModel.category.users) { user in
                         let binding = Binding<Int>(
-                            get: { userValues[user.id] ?? 1 },
-                            set: { userValues[user.id] = max(1, $0) }
+                            get: { userValues[user.id] ?? 0 },
+                            set: { userValues[user.id] = max(0, $0) }
                         )
 
                         HStack {
@@ -73,26 +101,7 @@ struct SplitView: View {
                         }
                     }
                     Button("計算する") {
-                        isCalculating = true
-                        let adjustedTotal = total - displayedAssistanceAmount
-                        let adjustedPaid = paidTotal - displayedAssistanceAmount
-                        let adjustedUnpaid = unpaidTotal - displayedAssistanceAmount
-
-                        let totalResult = distribute(amount: adjustedTotal, ratios: normalizedRatios)
-                        let paidResult = distribute(amount: adjustedPaid, ratios: normalizedRatios)
-                        let unpaidResult = distribute(amount: adjustedUnpaid, ratios: normalizedRatios)
-                        
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            displayedAssistanceAmount = assistanceAmount
-                            
-                            calculatedDistributed = [
-                                "total": totalResult,
-                                "paid": paidResult,
-                                "unpaid": unpaidResult
-                            ]
-                            
-                            isCalculating = false
-                        }
+                        calculate(showLoading: true)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -113,7 +122,7 @@ struct SplitView: View {
                         title: "合計",
                         totalAmount: total - displayedAssistanceAmount,
                         distributed: calculatedDistributed?["total"] ?? [:], // ←援助金控除後
-                        users: uniqueUsers,
+                        users: viewModel.category.users,
                         displayedAssistanceAmount: displayedAssistanceAmount
                     )
                     
@@ -126,7 +135,7 @@ struct SplitView: View {
                             title: "精算済み",
                             totalAmount: paidTotal - displayedAssistanceAmount,
                             distributed: calculatedDistributed?["paid"] ?? [:], // ←援助金控除後
-                            users: uniqueUsers,
+                            users: viewModel.category.users,
                             displayedAssistanceAmount: displayedAssistanceAmount
                         )
                     }
@@ -140,7 +149,7 @@ struct SplitView: View {
                             title: "未精算",
                             totalAmount: unpaidTotal - displayedAssistanceAmount,
                             distributed: calculatedDistributed?["unpaid"] ?? [:], // ←援助金控除後
-                            users: uniqueUsers,
+                            users: viewModel.category.users,
                             displayedAssistanceAmount: displayedAssistanceAmount
                         )
                     }
@@ -150,15 +159,19 @@ struct SplitView: View {
                 
                 Spacer()
             }
-            .onAppear { initializeUserValuesIfNeeded()
-                // 初期表示：均等割り（1:1）
-                calculatedDistributed = [
-                    "total": distribute(amount: total, ratios: normalizedRatios),
-                    "paid": distribute(amount: paidTotal, ratios: normalizedRatios),
-                    "unpaid": distribute(amount: unpaidTotal, ratios: normalizedRatios)
-                ]
+            .onAppear {
+                for user in viewModel.category.users {
+                    if hasAmount(user) {
+                        userValues[user.id] = 1   // 金額あり → 割り勘対象
+                    } else {
+                        userValues[user.id] = 0   // 金額なし → 対象外
+                    }
+                }
+                if !hasInitialized {
+                    hasInitialized = true
+                    calculate(showLoading: false)
+                }
             }
-            
             
         }
         .toolbar {
@@ -194,40 +207,36 @@ struct SplitView: View {
         
     }
     
-    // MARK: - Helpers
-    
-    // 配列順は uniqueUsers の順に合わせる（表示順と一致）
+    func hasAmount(_ user: User) -> Bool {
+        categoryItems.contains { item in
+            (item.userAmounts[user.id] ?? 0) > 0
+        }
+    }
+
     private func distribute(
         amount: Int,
-        ratios: [User.ID: Int]
+        ratios: [User.ID: Double]
     ) -> [User.ID: Int] {
 
         guard amount > 0 else {
-            var zero: [User.ID: Int] = [:]
-            for user in uniqueUsers {
-                zero[user.id] = 0
-            }
-            return zero
+            return Dictionary(
+                uniqueKeysWithValues: allUsers.map { ($0.id, 0) }
+            )
         }
 
-        let totalRatio = ratios.values.reduce(0, +)
-
-        // 比率が全部 0 → 均等配分
-        let effectiveRatios: [User.ID: Int] =
-            totalRatio == 0
-            ? Dictionary(uniqueKeysWithValues: uniqueUsers.map { ($0.id, 1) })
-            : ratios
-
-        let sumRatios = effectiveRatios.values.reduce(0, +)
+        let sumRatios = ratios.values.reduce(0, +)
+        guard sumRatios > 0 else {
+            return Dictionary(
+                uniqueKeysWithValues: allUsers.map { ($0.id, 0) }
+            )
+        }
 
         var assigned: [User.ID: Int] = [:]
         var assignedSum = 0
 
-        for user in uniqueUsers {
-            let r = effectiveRatios[user.id] ?? 0
-            let share = Int(
-                Double(amount) * Double(r) / Double(max(1, sumRatios))
-            )
+        for user in allUsers {
+            let r = ratios[user.id] ?? 0
+            let share = Int((Double(amount) * r).rounded(.down))
             assigned[user.id] = share
             assignedSum += share
         }
@@ -236,69 +245,48 @@ struct SplitView: View {
         var remainder = amount - assignedSum
         var index = 0
         while remainder > 0 {
-            let user = uniqueUsers[index]
+            let user = allUsers[index]
             assigned[user.id, default: 0] += 1
             remainder -= 1
-            index = (index + 1) % uniqueUsers.count
+            index = (index + 1) % allUsers.count
         }
 
         return assigned
     }
+    
+    // 割り勘計算
+    private func calculate(showLoading: Bool) {
+        guard !normalizedRatios.isEmpty else {
+            calculatedDistributed = nil
+            return
+        }
 
-    
-    
-    private func initializeUserValuesIfNeeded() {
-        guard !hasInitialized else { return }
-        
-        for user in uniqueUsers {
-            userValues[user.id] = userValues[user.id] ?? 1
+        if showLoading {
+            isCalculating = true
         }
-        hasInitialized = true
-    }
-    
-    // 正規化された ratios（userValues をそのまま使って OK）
-    private var normalizedRatios: [User.ID: Int] {
-        var dict: [User.ID: Int] = [:]
-        for user in uniqueUsers {
-            dict[user.id] = userValues[user.id] ?? 0
+        let assist = assistanceAmount
+
+        let adjustedTotal = total - assist
+        let adjustedPaid = paidTotal - assist
+        let adjustedUnpaid = unpaidTotal - assist
+
+        let totalResult = distribute(amount: adjustedTotal, ratios: normalizedRatios)
+        let paidResult = distribute(amount: adjustedPaid, ratios: normalizedRatios)
+        let unpaidResult = distribute(amount: adjustedUnpaid, ratios: normalizedRatios)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            displayedAssistanceAmount = assist
+            calculatedDistributed = [
+                "total": totalResult,
+                "paid": paidResult,
+                "unpaid": unpaidResult
+            ]
+
+            if showLoading {
+                isCalculating = false
+            }
         }
-        return dict
     }
-    
-    // MARK: - Computed for totals
-    private var uniqueUsers: [User] {
-        var seen = Set<User.ID>()
-        return categoryItems
-            .flatMap { item in
-                item.userAmounts.keys.compactMap { userId in
-                    viewModel.category.users.first { $0.id == userId }
-                }
-            }
-            .filter { user in
-                if seen.contains(user.id) {
-                    return false
-                } else {
-                    seen.insert(user.id)
-                    return true
-                }
-            }
-    }
-    // 精算済み合計
-    private var paidTotal: Int {
-        categoryItems.filter { $0.isPaid }.map { $0.totalAmount }.reduce(0, +)
-    }
-    // 未精算合計
-    private var unpaidTotal: Int {
-        categoryItems.filter { !$0.isPaid }.map { $0.totalAmount }.reduce(0, +)
-    }
-    // 全ての合計
-    private var total: Int { paidTotal + unpaidTotal }
-    
-    private let numberFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .none
-        return f
-    }()
 
 }
 
@@ -377,11 +365,14 @@ private struct CategorySplitView: View {
             }
             
             ForEach(users) { user in
+                let amount = distributed[user.id] ?? 0
                 HStack {
                     Text(user.name)
                         .fontWeight(.medium)
                     Spacer()
-                    Text("¥\(distributed[user.id] ?? 0)円")
+                    Text(amount == 0 ? "対象外" : "¥\(amount)円")
+                        .foregroundColor(amount == 0 ? .gray : .primary)
+                    
                 }
                 .padding(.vertical, 4)
             }
