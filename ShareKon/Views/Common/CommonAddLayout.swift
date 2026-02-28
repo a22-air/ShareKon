@@ -41,13 +41,13 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
             
             // リスト
             List {
-                ForEach($items) { $item in
+                ForEach(items.indices.reversed(), id: \.self) { index in
+                    let item = items[index]
+
                     HStack {
                         if isEditing {
                             EditingView(
-                                item: $item,
-//                                items: $items,
-//                                selectedItem: $selectedItem,
+                                item: $items[index],
                                 isFocused: $isFocused
                             )
                         } else {
