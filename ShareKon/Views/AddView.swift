@@ -41,6 +41,7 @@ struct AddView: View {
     @State private var draftSelectedCategory: CategoryItem?
     @ObservedObject var viewModel: CategoryViewModel
     @ObservedObject var vm: AddExpenseViewModel
+    @FocusState private var isFocused: Bool
     
     var isSaveDisabled: Bool {
         return calculateTotal() == 0
@@ -173,6 +174,7 @@ struct AddView: View {
                         TextField("¥0", text: binding)
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
+                            .focused($isFocused)
                             .onChange(of: binding.wrappedValue) { _, newValue in
                                 formatCurrency(newValue, for: user)
                             }
@@ -263,6 +265,14 @@ struct AddView: View {
                     // ¥0 では保存ボタンが押下できない
                     // categoryListが空では保存ボタンが押下できない
                 }
+                
+                ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("完了") {
+                            isFocused = false
+                        }
+                    }
+                
             } // toolbar
             
         } // Navigation
