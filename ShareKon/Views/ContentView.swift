@@ -114,7 +114,11 @@ struct ExpenseListView: View {
     var body: some View {
         List {
             ForEach(groupedByDate, id: \.key) { date, items in
-                ExpenseSectionView(viewModel: viewModel, date: date, onSelect: onSelect)
+                ExpenseSectionView(
+                    viewModel: viewModel,
+                    date: date,
+                    items: items,
+                    onSelect: onSelect)
             }
         }
         .listStyle(.plain) // 見た目を ScrollView に近づける
@@ -147,6 +151,7 @@ struct ExpenseSectionView: View {
     @EnvironmentObject var paymentData: ExpenseData
     @ObservedObject var viewModel: CategoryViewModel
     let date: String
+    let items: [ExpenseItem]
     let onSelect: (ExpenseItem) -> Void
     private let sectionDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -158,7 +163,7 @@ struct ExpenseSectionView: View {
     var body: some View {
         Section(header: Text(date).font(.headline)) {
             // ✅ viewModel.items の中から、このセクションの日付に合うものだけを表示
-            ForEach(viewModel.items.filter {
+            ForEach(items.filter {
                 sectionDateFormatter.string(from: $0.date) == date
             }) { item in
                 ExpenseRowView(
