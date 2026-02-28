@@ -46,8 +46,8 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                         if isEditing {
                             EditingView(
                                 item: $item,
-                                items: $items,
-                                selectedItem: $selectedItem,
+//                                items: $items,
+//                                selectedItem: $selectedItem,
                                 isFocused: $isFocused
                             )
                         } else {
@@ -91,22 +91,23 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
     
     struct EditingView: View {
         @Binding var item: Item
-        @Binding var items: [Item]
-        @Binding var selectedItem: Item?
+//        @Binding var items: [Item]
+//        @Binding var selectedItem: Item?
         var isFocused: FocusState<Bool>.Binding
         
         var body: some View {
             HStack {
-                Button {
-                    items.removeAll { $0.id == item.id }
-                    if selectedItem?.id == item.id {
-                        selectedItem = nil
-                    }
-                } label: {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                }
-                .buttonStyle(.borderless)
+                // 削除機能は無し（必要になれば復活）
+//                Button {
+//                    items.removeAll { $0.id == item.id }
+//                    if selectedItem?.id == item.id {
+//                        selectedItem = nil
+//                    }
+//                } label: {
+//                    Image(systemName: "trash")
+//                        .foregroundColor(.red)
+//                }
+//                .buttonStyle(.borderless)
                 
                 TextField("", text: $item.name)
                     .textFieldStyle(.roundedBorder)
