@@ -64,11 +64,6 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                         dismiss()
                     }
                 }
-                .onMove { source, destination in
-                    if isEditing {
-                        items.move(fromOffsets: source, toOffset: destination)
-                    }
-                }
             }
 
             .cornerRadius(8)
