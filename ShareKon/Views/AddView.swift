@@ -37,6 +37,8 @@ struct AddView: View {
     @State private var checked = false
     @State private var selectedUsers: [User] = []
     @State private var isPaid: Bool = false // ← 精算済みかどうか
+    @State private var draftCategories: [CategoryItem]
+    @State private var draftSelectedCategory: CategoryItem?
     @ObservedObject var viewModel: CategoryViewModel
     @ObservedObject var vm: AddExpenseViewModel
     
@@ -50,6 +52,24 @@ struct AddView: View {
     // 編集する場合の ExpenseItem
     var editingItem: ExpenseItem?
     
+    init(
+        viewModel: CategoryViewModel,
+        vm: AddExpenseViewModel,
+        editingItem: ExpenseItem? = nil
+    ) {
+        self.viewModel = viewModel
+        self.vm = vm
+        self.editingItem = editingItem
+
+        // AddView 内で使う下書き（ドラフト）を作成
+        _draftCategories = State(
+            initialValue: viewModel.category.categoryList
+        )
+        _draftSelectedCategory = State(
+            initialValue: vm.selectedCategory
+        )
+    }
+    
     var body: some View {
         
         NavigationView{
@@ -57,11 +77,11 @@ struct AddView: View {
             List {
                 // カテゴリ選択
                 CommonSelectView(
-                    items: $viewModel.category.categoryList,
-                    selectedItem: $vm.selectedCategory,
+                    items: $draftCategories,
+                    selectedItem: $draftSelectedCategory,
                     destination: CategoryView(
-                        categories: $viewModel.category.categoryList,
-                        selectedCategory: $vm.selectedCategory)
+                        categories: $draftCategories,
+                        selectedCategory: $draftSelectedCategory)
                 )
 
                 // 日付
@@ -221,6 +241,7 @@ struct AddView: View {
                 // 左上：キャンセルボタン
                 ToolbarItem(placement: .cancellationAction) {
                     Button("キャンセル") {
+                        vm.reset()
                         dismiss()
                     }
                 }
@@ -242,14 +263,7 @@ struct AddView: View {
             } // toolbar
             
         } // Navigation
-        .onAppear {
-            if let item = editingItem {
-                vm.setupForEdit(item: item)
-            } else {
-                vm.reset()
-            }
-        }
-        
+
     } // View
     
     // 日本円フォーマット関数
@@ -280,10 +294,13 @@ struct AddView: View {
 
         // カテゴリを安全に取得
         guard let category =
-            vm.selectedCategory
-            ?? viewModel.category.categoryList.first
+                draftSelectedCategory
+                ?? draftCategories.first
         else { return }
-
+        
+        vm.selectedCategory = category
+        viewModel.category.categoryList = draftCategories
+        
         // ユーザーごとの金額を Int に変換
         var amounts: [User.ID: Int] = [:]
         for user in selectedUsers {

@@ -52,6 +52,7 @@ struct ContentView: View {
                     TotalSummaryView(items: tabItems, users: viewModel.category.users)
                 }
             }
+            
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -75,6 +76,11 @@ struct ContentView: View {
             .sheet(item: $selectedEditingItem) { item in
                 AddView(viewModel: viewModel, vm: vm, editingItem: item)
             }
+            .onChange(of: selectedEditingItem?.id) {
+                if let item = selectedEditingItem {
+                    vm.setupForEdit(item: item)
+                }
+            }
         }
         .onAppear {
             guard !ProcessInfo.isPreview else { return }
@@ -82,6 +88,7 @@ struct ContentView: View {
                 selectedTab = 2
             }
         }
+        
     }
     
     // MARK: - タブごとのアイテム
