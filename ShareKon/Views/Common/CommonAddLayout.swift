@@ -47,7 +47,8 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                             EditingView(
                                 item: $item,
                                 items: $items,
-                                selectedItem: $selectedItem
+                                selectedItem: $selectedItem,
+                                isFocused: $isFocused
                             )
                         } else {
                             Text(item.name)
@@ -92,6 +93,7 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
         @Binding var item: Item
         @Binding var items: [Item]
         @Binding var selectedItem: Item?
+        var isFocused: FocusState<Bool>.Binding
         
         var body: some View {
             HStack {
@@ -108,6 +110,7 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                 
                 TextField("", text: $item.name)
                     .textFieldStyle(.roundedBorder)
+                    .focused(isFocused)
             }
         }
     }

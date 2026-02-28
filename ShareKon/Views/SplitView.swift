@@ -69,6 +69,7 @@ struct SplitView: View {
                             TextField("比率", value: binding, formatter: numberFormatter)
                                 .textFieldStyle(.roundedBorder)
                                 .keyboardType(.numberPad)
+                                .focused($isFocused)
                         }
                     }
                     Button("計算する") {
