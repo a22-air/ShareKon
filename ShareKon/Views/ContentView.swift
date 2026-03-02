@@ -8,13 +8,28 @@
 import SwiftUI
 import Combine
 
+// 新規、編集画面切り替え用
+enum AddSheetMode: Identifiable {
+    case add
+    case edit(ExpenseItem)
+
+    var id: String {
+        switch self {
+        case .add:
+            return "add"
+        case .edit(let item):
+            return item.id
+        }
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject var paymentData: ExpenseData
     @Environment(\.horizontalSizeClass) var sizeClass
     @ObservedObject var viewModel: CategoryViewModel
-    @State private var showModal: Bool = false
     @State private var selectedTab: Int = 0
     @State private var selectedEditingItem: ExpenseItem? = nil
+    @State private var addSheetMode: AddSheetMode?
     @StateObject private var vm = AddExpenseViewModel()
     private let sectionDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -42,7 +57,8 @@ struct ContentView: View {
                         .environmentObject(paymentData)
                 } else { // 未精算、精算済み、合計表示
                     ExpenseListView(viewModel: viewModel, items: tabItems) { item in
-                        selectedEditingItem = item
+                        selectedEditingItem = item // 現在の中カテゴリ
+                        addSheetMode = .edit(item)
                     }
                     .environmentObject(paymentData)
                 }
@@ -61,20 +77,27 @@ struct ContentView: View {
                         .fontWeight(.semibold)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showModal.toggle() } label: {
+                    Button { addSheetMode = .add } label: {
                         Image(systemName: "plus.circle.fill")
                             .resizable()
                             .frame(width: 25, height: 25)
                     }
                 }
             }
-            // 新規追加モード
-            .sheet(isPresented: $showModal) {
-                AddView(viewModel: viewModel, vm: vm)
-            }
-            // 編集モード
-            .sheet(item: $selectedEditingItem) { item in
-                AddView(viewModel: viewModel, vm: vm, editingItem: item)
+            .sheet(item: $addSheetMode) { mode in
+                switch mode {
+                case .add:
+                    // 新規モード
+                    AddView(viewModel: viewModel, vm: vm)
+
+                case .edit(let item):
+                    // 編集モード
+                    AddView(
+                        viewModel: viewModel,
+                        vm: vm,
+                        editingItem: item
+                    )
+                }
             }
             .onChange(of: selectedEditingItem?.id) {
                 if let item = selectedEditingItem {
