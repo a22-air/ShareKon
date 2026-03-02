@@ -58,7 +58,7 @@ class CategoryViewModel: ObservableObject {
                 .collection("items")
                 .document(item.id)
 
-            // 🔽 Firestore 用に変換
+            // Firestore 用に変換
             let userAmountsData: [String: Int] =
                 Dictionary(uniqueKeysWithValues: item.userAmounts.map {
                     ($0.key.uuidString, $0.value)
@@ -86,7 +86,7 @@ class CategoryViewModel: ObservableObject {
     // Firestore からリアルタイムで ExpenseItem を取得
     func listenItems() {
         guard itemsListener == nil else {
-            print("⚠️ listenItems は既に登録済み")
+            print("listenItems は既に登録済み")
             return
         }
 

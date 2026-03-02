@@ -31,7 +31,6 @@ class CategoryListViewModel: ObservableObject {
                     let iconName = data["iconName"] as? String ?? "folder.fill"
                     let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
 
-                    // ✅ users 修正ポイント
                     let users: [User] = (data["users"] as? [[String: Any]] ?? []).compactMap {
                         guard
                             let idString = $0["id"] as? String,
@@ -75,7 +74,6 @@ class CategoryListViewModel: ObservableObject {
                     let iconName = data["iconName"] as? String ?? "folder.fill"
                     let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
                     
-                    // ✅ users 修正ポイント
                     let users: [User] = (data["users"] as? [[String: Any]] ?? []).compactMap {
                         guard
                             let idString = $0["id"] as? String,
@@ -86,7 +84,7 @@ class CategoryListViewModel: ObservableObject {
                         return User(id: id, name: name)
                     }
                     
-                    // 🔽 categoryList: [String] → [CategoryItem]
+                    // categoryList: [String] → [CategoryItem]
                     let categoryNames = data["categoryList"] as? [String] ?? []
                     let categoryItems: [CategoryItem] = categoryNames.map {
                         CategoryItem(name: $0)

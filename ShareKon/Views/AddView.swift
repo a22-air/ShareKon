@@ -30,7 +30,6 @@ struct CustomCheckBox: View {
 struct AddView: View {
     @Environment(\.dismiss) var dismiss
     @State var selectedUser: User? = nil
-    @State private var amount: String = ""
     @State var selectedCategory: CategoryItem? = nil
     @State private var date = Date()
     @State private var userAmounts: [User.ID: String] = [:]
@@ -375,11 +374,11 @@ struct AddView: View {
                     isNew: editingItem == nil
                 )
 
-                print("✅ Firestore 保存成功")
+                print("Firestore 保存成功")
                 dismiss()
 
             } catch {
-                print("❌ Firestore 保存失敗: \(error)")
+                print("Firestore 保存失敗: \(error)")
             }
         }
     }
