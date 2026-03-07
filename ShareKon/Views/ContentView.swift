@@ -50,7 +50,13 @@ struct ContentView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
-                
+                if viewModel.items.isEmpty{
+                    EmptyStateView(
+                        icon: "folder.badge.plus",
+                        title: "支出がまだありません",
+                        message: "右上の＋ボタンから支出を追加してください"
+                    )
+                }
                 // MARK: - コンテンツ部分
                 if selectedTab == 3 { // 割り勘ページ
                     SplitView(viewModel: viewModel, selectedTab: $selectedTab, category: viewModel.category)

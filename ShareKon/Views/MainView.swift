@@ -38,7 +38,7 @@ struct MainView: View {
             }
             
             HStack {
-                Text("カテゴリー")
+                Text("カテゴリ")
                     .font(.title)
                 Spacer()
             }
@@ -51,6 +51,13 @@ struct MainView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 headerView
+                if listVM.categories.isEmpty {
+                    EmptyStateView(
+                        icon: "folder.badge.plus",
+                        title: "カテゴリがありません",
+                        message: "右上の＋ボタンから追加してください"
+                    )
+                }
                 categoryList
             }
         }
