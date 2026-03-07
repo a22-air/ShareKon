@@ -166,7 +166,7 @@ struct AddView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(.black)
+                        .tint(.primary)
                         .frame(width: 80, alignment: .leading)
                         
                         // 金額入力

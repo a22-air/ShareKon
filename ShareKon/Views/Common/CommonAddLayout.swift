@@ -25,7 +25,7 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
             HStack(spacing: 12) {
                 TextField(placeholder, text: $inputText)
                     .padding(12)
-                    .background(Color(.systemGray6))
+                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(8)
                     .focused($isFocused)
                 
@@ -52,7 +52,7 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                             )
                         } else {
                             Text(item.name)
-                                .foregroundColor(.black)
+                                .foregroundColor(.primary)
                             Spacer()
                         }
                     }

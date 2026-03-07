@@ -180,7 +180,7 @@ struct MainView: View {
         } label: {
             rowContent(category)
         }
-        .foregroundColor(.black)
+        .foregroundColor(.primary)
     }
     
     private func categoryRowEdit(_ category: CategoryModel) -> some View {

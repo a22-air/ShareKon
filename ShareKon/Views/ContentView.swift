@@ -242,9 +242,13 @@ struct ExpenseRowView: View {
             HStack {
                 Text(item.category.name)
                     .font(sizeClass == .regular ? .title2 : .headline)
+                    .foregroundStyle(.primary)
+                
                 Spacer()
+                
                 Text("¥\(item.totalAmount.formattedWithSeparator())")
                     .font(sizeClass == .regular ? .title2 : .subheadline)
+                    .foregroundStyle(.primary)
             }
             
             ForEach(item.userAmounts.keys.sorted(), id: \.self) { userId in
@@ -253,23 +257,26 @@ struct ExpenseRowView: View {
                     .first(where: { $0.id == userId })?
                     .name
                 ?? "削除済みユーザー"
+                
                 HStack {
                     Text(userName)
                         .font(sizeClass == .regular ? .title2 : .subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.secondary)
                     
                     Spacer()
                     
                     Text("¥\(item.userAmounts[userId] ?? 0)")
                         .font(sizeClass == .regular ? .title2 : .subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.primary)
                 }
             }
         }
+    
         .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 }
 

@@ -106,14 +106,15 @@ struct SplitView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.blue)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .cornerRadius(10)
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                .padding(.horizontal)
+
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    .padding(.horizontal)
                 
                 // --- カード②〜：結果表示 ---
                 VStack(alignment: .leading, spacing: 16) {
@@ -324,9 +325,11 @@ private struct SectionCard<Content: View>: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+//        .shadow(radius: 4)
     }
 }
 
@@ -380,7 +383,7 @@ private struct CategorySplitView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
     }
