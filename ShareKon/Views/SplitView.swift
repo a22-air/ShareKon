@@ -329,7 +329,6 @@ private struct SectionCard<Content: View>: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemBackground))
         )
-//        .shadow(radius: 4)
     }
 }
 
