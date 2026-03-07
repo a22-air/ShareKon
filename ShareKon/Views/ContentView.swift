@@ -280,47 +280,47 @@ struct TotalSummaryView: View {
     let users: [User]
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: sizeClass == .regular ? 8 : 4) {
             HStack {
                 Spacer()
                 Text("合計: ¥\(total.formattedWithSeparator())")
-                    .font(.title2)
+                    .font(sizeClass == .regular ? .title2 : .headline)
                     .bold()
             }
             
-            // 支出に登場している userId 一覧
             let userIds = Array(
                 Set(items.flatMap { $0.userAmounts.keys })
             )
             
             let columns = Array(
-                repeating: GridItem(.flexible(), spacing: 8),
+                repeating: GridItem(.flexible(), spacing: sizeClass == .regular ? 8 : 4),
                 count: sizeClass == .regular ? 3 : 2
             )
             
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(columns: columns, spacing: sizeClass == .regular ? 12 : 6) {
                 ForEach(userIds, id: \.self) { userId in
                     let userName =
                     users.first(where: { $0.id == userId })?.name
                     ?? "削除済みユーザー"
                     
-                    VStack(spacing: 4) {
+                    VStack(spacing: 2) {
                         Text(userName)
-                            .font(sizeClass == .regular ? .title2 : .subheadline)
-                            .bold()
-                        Text("¥\(userTotal(userId).formattedWithSeparator())")
                             .font(sizeClass == .regular ? .title2 : .footnote)
+                            .bold()
+                        
+                        Text("¥\(userTotal(userId).formattedWithSeparator())")
+                            .font(sizeClass == .regular ? .title2 : .caption)
                     }
                 }
             }
-            .font(.title2)
-            .padding(.top, 4)
+            .padding(.top, 2)
         }
-        .padding()
+        .padding(sizeClass == .regular ? 16 : 10)
         .background(Color(.systemGray6))
         .cornerRadius(12)
         .padding(.horizontal)
     }
+
     
     var total: Int {
         items.map { $0.totalAmount }.reduce(0, +)
