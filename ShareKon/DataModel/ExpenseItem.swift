@@ -8,6 +8,7 @@
 import Foundation
 struct ExpenseItem: Identifiable {
     let id: String
+    var ownerId: String
     var category: CategoryItem
     var date: Date
     var totalAmount: Int
@@ -18,6 +19,7 @@ struct ExpenseItem: Identifiable {
     // Firestore から復元する用イニシャライザ
     init(
         id: String,
+        ownerId: String,
         category: CategoryItem,
         date: Date,
         totalAmount: Int,
@@ -26,6 +28,7 @@ struct ExpenseItem: Identifiable {
         createdAt: Date? = nil
     ) {
         self.id = id
+        self.ownerId = ownerId
         self.category = category
         self.date = date
         self.totalAmount = totalAmount
@@ -36,6 +39,7 @@ struct ExpenseItem: Identifiable {
 
     // 新規作成用イニシャライザ
     init(
+        ownerId: String,
         category: CategoryItem,
         date: Date,
         totalAmount: Int,
@@ -44,6 +48,7 @@ struct ExpenseItem: Identifiable {
         createdAt: Date? = nil
     ) {
         self.id = UUID().uuidString
+        self.ownerId = ownerId
         self.category = category
         self.date = date
         self.totalAmount = totalAmount

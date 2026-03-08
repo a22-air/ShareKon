@@ -9,5 +9,6 @@ import Foundation
 
 protocol NameIdentifiable: Identifiable, Hashable {
     var name: String { get set }
-    init(id: UUID, name: String)
+    var uid: String { get set }
+    init(id: UUID, name: String, uid: String)
 }

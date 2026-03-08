@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import FirebaseAuth
 
 @MainActor
 class CategoryViewModel: ObservableObject {
@@ -25,25 +26,32 @@ class CategoryViewModel: ObservableObject {
     }
     //     カテゴリを Firestore に保存
     func saveCategory() async throws {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("匿名認証 UID が取得できません")
+            return
+        }
+
         let ref = db.collection("categories").document(category.id)
 
-            // Firestore 用に変換
+        // Firestore 用に変換
         let usersData = category.users.map {
             [
                 "id": $0.id.uuidString,
-                "name": $0.name
+                "name": $0.name,
+                "uid": $0.uid
             ]
         }
         let categoryListData = category.categoryList.map { $0.name }
-        
+
         try await ref.setData([
             "name": category.name,
             "users": usersData,
+            "ownerId": uid,
             "iconName": category.iconName,
             "categoryList": categoryListData,
             "createdAt": FieldValue.serverTimestamp()
         ], merge: false)
-        
+
         // serverTimestamp を確定させるため再取得
         let snap = try await ref.getDocument()
         if let ts = snap.data()?["createdAt"] as? Timestamp {
@@ -53,38 +61,45 @@ class CategoryViewModel: ObservableObject {
     
     // ExpenseItem を Firestore に保存
     func saveExpenseItem(_ item: ExpenseItem, isNew: Bool) async throws {
-        let ref = db.collection("categories")
-                .document(category.id)
-                .collection("items")
-                .document(item.id)
-
-            // Firestore 用に変換
-            let userAmountsData: [String: Int] =
-                Dictionary(uniqueKeysWithValues: item.userAmounts.map {
-                    ($0.key.uuidString, $0.value)
-                })
-
-            var data: [String: Any] = [
-                "category": item.category.name,
-                "date": Timestamp(date: item.date),
-                "totalAmount": item.totalAmount,
-                "userAmounts": userAmountsData,
-                "isPaid": item.isPaid
-            ]
-
-            if isNew {
-                data["createdAt"] = FieldValue.serverTimestamp()
-            } else {
-                data["updatedAt"] = FieldValue.serverTimestamp()
-            }
-
-            try await ref.setData(data, merge: false)
         
+        guard let uid = Auth.auth().currentUser?.uid else {
+            throw NSError(domain: "AuthError", code: -1, userInfo: [NSLocalizedDescriptionKey: "ユーザー未ログイン"])
+        }
+
+        let ref = db.collection("categories")
+            .document(category.id)
+            .collection("items")
+            .document(item.id)
+
+        // Firestore 用に変換
+        let userAmountsData: [String: Int] =
+            Dictionary(uniqueKeysWithValues: item.userAmounts.map {
+                ($0.key.uuidString, $0.value)
+            })
+
+        var data: [String: Any] = [
+            "ownerId": uid, // ←追加（重要）
+            "category": item.category.name,
+            "date": Timestamp(date: item.date),
+            "totalAmount": item.totalAmount,
+            "userAmounts": userAmountsData,
+            "isPaid": item.isPaid
+        ]
+
+        if isNew {
+            data["createdAt"] = FieldValue.serverTimestamp()
+        } else {
+            data["updatedAt"] = FieldValue.serverTimestamp()
+        }
+
+        try await ref.setData(data, merge: false)
     }
     
     
     // Firestore からリアルタイムで ExpenseItem を取得
     func listenItems() {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
         guard itemsListener == nil else {
             print("listenItems は既に登録済み")
             return
@@ -93,6 +108,7 @@ class CategoryViewModel: ObservableObject {
         itemsListener = db.collection("categories")
             .document(category.id)
             .collection("items")
+            .whereField("ownerId", isEqualTo: uid)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let self,
                       let docs = snapshot?.documents else { return }
@@ -103,9 +119,12 @@ class CategoryViewModel: ObservableObject {
                     let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
                     let date = (data["date"] as? Timestamp)?.dateValue() ?? Date()
 
+                    let ownerId = data["ownerId"] as? String ?? ""
+
                     // Firestore [String: Int] → App [User.ID: Int]
                     let rawUserAmounts = data["userAmounts"] as? [String: Int] ?? [:]
                     var userAmounts: [User.ID: Int] = [:]
+
                     for (key, value) in rawUserAmounts {
                         if let uuid = UUID(uuidString: key) {
                             userAmounts[uuid] = value
@@ -113,10 +132,12 @@ class CategoryViewModel: ObservableObject {
                     }
 
                     let categoryName = data["category"] as? String ?? ""
-                    let categoryItem = CategoryItem(name: categoryName)
+                    let categoryUID = data["categoryUID"] as? String ?? ""
+                    let categoryItem = CategoryItem(name: categoryName, uid: categoryUID)
 
                     return ExpenseItem(
                         id: doc.documentID,
+                        ownerId: ownerId,
                         category: categoryItem,
                         date: date,
                         totalAmount: data["totalAmount"] as? Int ?? 0,

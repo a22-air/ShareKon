@@ -44,8 +44,8 @@ struct CommonSelectView<Destination: View>: View {
     }
     
     struct CommonSelectViewPreviewWrapper: View {
-        @State var items: [CategoryItem] = [CategoryItem(name:"食費"), CategoryItem(name:"交通費")]
-        @State var selectedItem: CategoryItem? = CategoryItem(name: "食費")
+        @State var items: [CategoryItem] = [CategoryItem(name:"食費",uid:"1"), CategoryItem(name:"交通費",uid:"2")]
+        @State var selectedItem: CategoryItem? = CategoryItem(name: "食費", uid:"1")
         
         var body: some View {
             NavigationStack {

@@ -376,15 +376,18 @@ extension Array where Element: Hashable {
     let sampleData = ExpenseData()
     
     let users = [
-        User(name: "愛利"),
-        User(name: "太郎")
+        User(name: "愛利", uid: ""),
+        User(name: "太郎", uid: "")
     ]
     
     let sampleCategory = CategoryModel(
         name: "披露宴",
         users: users,
+        ownerId: "",
         iconName: "folder.fill",
-        categoryList: [CategoryItem(name:"会場費")],
+        categoryList: [
+            CategoryItem(name: "会場費", uid: "")
+        ],
         createdAt: Date()
     )
     

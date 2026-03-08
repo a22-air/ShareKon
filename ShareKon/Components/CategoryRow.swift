@@ -53,7 +53,8 @@ struct CategoryRow<Destination: View>: View {
 #Preview {
     let sampleCategory = CategoryModel(
         name: "披露宴",
-        users: [User(name:"愛利")],
+        users: [User(name:"愛利", uid:"1")],
+        ownerId: "",
         iconName: "folder.fill",
         createdAt: Date()
     )

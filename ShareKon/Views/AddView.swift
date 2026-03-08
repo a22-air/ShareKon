@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 // チェックボックスUI
 struct CustomCheckBox: View {
@@ -328,7 +329,8 @@ struct AddView: View {
 
         let total = amounts.values.reduce(0, +)
         print("▶ totalAmount: \(total)")
-
+        
+        let uid = Auth.auth().currentUser!.uid
         // === 保存する ExpenseItem を作成 ===
         let itemToSave: ExpenseItem
         if var editing = editingItem {
@@ -354,6 +356,7 @@ struct AddView: View {
         } else {
             // 新規作成
             itemToSave = ExpenseItem(
+                ownerId: uid,
                 category: category,
                 date: date,
                 totalAmount: total,
@@ -411,12 +414,13 @@ struct AddView: View {
 
 #Preview {
     let users = [
-        User(name: "愛利"),
-        User(name: "太郎")
+        User(name: "愛利", uid: "1"),
+        User(name: "太郎", uid: "1")
     ]
     let sampleCategory = CategoryModel(
         name: "披露宴",
         users: users,
+        ownerId: "",
         iconName: "folder.fill",
         createdAt: Date()
     )

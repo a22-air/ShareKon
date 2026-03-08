@@ -24,7 +24,7 @@ struct SelectUserView: View {
 }
 
 #Preview {
-    @Previewable @State var selectedUser: User? = User(name:"ユーザーA")
-    @Previewable @State var users: [User] = [User(name:"ユーザーB")]
+    @Previewable @State var selectedUser: User? = User(name:"ユーザーA",uid: "1")
+    @Previewable @State var users: [User] = [User(name:"ユーザーB",uid:"1")]
     SelectUserView(users: $users, selectedUser: $selectedUser)
 }

@@ -30,7 +30,13 @@ struct CategoryView: View {
 
 #Preview {
     // モックデータとして selectedCategory を用意
-    @Previewable @State var selectedCategory: CategoryItem? = CategoryItem(id: UUID(), name: "ドレス")
-    @Previewable @State var categories: [CategoryItem] = [CategoryItem(name:"披露宴"), CategoryItem(name:"ドレス"), CategoryItem(name:"パーティー"), CategoryItem(name:"その他")]
+    @Previewable @State var selectedCategory: CategoryItem? = CategoryItem(id: UUID(), name: "ドレス", uid: "1")
+    @Previewable @State var categories: [CategoryItem] = [
+        CategoryItem(name: "披露宴", uid: ""),
+        CategoryItem(name: "ドレス", uid: "1"),
+        CategoryItem(name: "パーティー", uid: ""),
+        CategoryItem(name: "その他", uid: "")
+    ]
+    
     CategoryView(categories: $categories, selectedCategory: $selectedCategory)
 }

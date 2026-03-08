@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Firebase
+import FirebaseAuth
 
 struct MainView: View {
     @StateObject var expenseData = ExpenseData() // 中カテゴリ
@@ -61,21 +62,20 @@ struct MainView: View {
                 categoryList
             }
         }
-        .onChange(of: listVM.categories.map(\.id)) { _, newIDs in
-            // カテゴリが空になったら編集モード解除
-            if newIDs.isEmpty {
+        .onChange(of: listVM.categories) { _, newCategories in
+
+            if newCategories.isEmpty {
                 isEditing = false
                 categoryViewModels.removeAll()
                 return
             }
 
-            for category in listVM.categories {
+            for category in newCategories {
                 if categoryViewModels[category.id] == nil {
                     categoryViewModels[category.id] = CategoryViewModel(category: category)
                 }
             }
         }
-
         // アラート表示
         .alert(
             "カテゴリを削除しますか？",
@@ -109,9 +109,15 @@ struct MainView: View {
                     let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
                     guard !trimmed.isEmpty, !users.isEmpty else { return }
                     
+                    guard let uid = Auth.auth().currentUser?.uid else {
+                        print("匿名認証 UID が取得できません")
+                        return
+                    }
+                    
                     let newCategory = CategoryModel(
                         name: trimmed,
                         users: users,
+                        ownerId: uid,
                         iconName: selectedIcon
                     )
                     
@@ -225,21 +231,22 @@ extension CategoryListViewModel {
     static var preview: CategoryListViewModel {
         let vm = CategoryListViewModel()
         let users = [
-            User(name: "愛利"),
-            User(name: "太郎")
+            User(name: "愛利", uid: ""),
+            User(name: "太郎", uid: "")
         ]
 
         vm.categories = [
             CategoryModel(
                 name: "食費",
                 users: users,
-                iconName: "cart.fill"
+                ownerId: "",
+                iconName: "cart.fill",
+                categoryList: []
             )
         ]
         return vm
     }
 }
-
 #Preview {
     MainView(listVM: .preview)
         .environmentObject(CategoryListViewModel.preview)

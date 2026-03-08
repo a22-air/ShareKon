@@ -11,6 +11,7 @@ struct CategoryModel: Identifiable, Codable, Equatable {
     let id: String
     var name: String
     var users: [User] = []
+    var ownerId: String
     var iconName: String
     var categoryList: [CategoryItem] = []
     var createdAt: Date? // 登録順を安定させるために作成
@@ -18,12 +19,14 @@ struct CategoryModel: Identifiable, Codable, Equatable {
     init(id: String = UUID().uuidString,
          name: String,
          users: [User] = [],
+         ownerId: String,
          iconName: String = "folder.fill",
          categoryList: [CategoryItem] = [],
          createdAt: Date? = nil
     ) {
         self.id = id
         self.name = name
+        self.ownerId = ownerId
         self.users = users
         self.iconName = iconName
         self.categoryList = categoryList

@@ -116,12 +116,13 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         
-        let newItem = Item(id: UUID(), name: trimmed)
+        // UID は未登録なので空文字
+        let newItem = Item(id: UUID(), name: trimmed, uid: "")
         items.append(newItem)
+        
         inputText = ""
         isFocused = false
     }
-
 }
 
 #Preview {
@@ -130,7 +131,7 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
         placeholder: "カテゴリを追加",
         inputText: .constant(""),
         items: .constant([
-                    CategoryItem(id: UUID(), name: "カテゴリA")
+            CategoryItem(id: UUID(), name: "カテゴリA", uid:"1")
                 ]),
         selectedItem: .constant(nil)
     )

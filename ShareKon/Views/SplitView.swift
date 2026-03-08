@@ -393,7 +393,8 @@ private struct CategorySplitView: View {
     
     let sampleCategory = CategoryModel(
         name: "旅行",
-        users: [User(name:"Airi")],
+        users: [User(name:"Airi",uid:"1")],
+        ownerId: "",
         iconName: "foleder.fill"
     )
     // ViewModel を作成

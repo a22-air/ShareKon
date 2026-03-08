@@ -7,6 +7,8 @@
 
 import Foundation
 import Firebase
+import FirebaseAuth
+
 @MainActor
 class CategoryListViewModel: ObservableObject {
     @Published var categories: [CategoryModel] = []
@@ -20,86 +22,114 @@ class CategoryListViewModel: ObservableObject {
     }
     // データ読み込み
     func fetchCategories() {
-        db.collection("categories").addSnapshotListener { [weak self] snapshot, error in
-                guard let self else { return }
-                guard let documents = snapshot?.documents else { return }
+        guard let uid = Auth.auth().currentUser?.uid else { return }
 
-                let categories: [CategoryModel] = documents.map { doc in
-                    let data = doc.data()
+        db.collection("categories")
+            .whereField("ownerId", isEqualTo: uid).addSnapshotListener { [weak self] snapshot, error in
+            guard let self = self else { return }
+            guard let documents = snapshot?.documents else { return }
 
-                    let name = data["name"] as? String ?? ""
-                    let iconName = data["iconName"] as? String ?? "folder.fill"
-                    let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
+            let categories: [CategoryModel] = documents.compactMap { doc in
+                let data = doc.data()
+                
+                let ownerId = data["ownerId"] as? String ?? ""
+                let usersArray = data["users"] as? [[String: Any]] ?? []
+                let isShared = usersArray.contains { $0["uid"] as? String == uid }
 
-                    let users: [User] = (data["users"] as? [[String: Any]] ?? []).compactMap {
-                        guard
-                            let idString = $0["id"] as? String,
-                            let id = UUID(uuidString: idString),
-                            let name = $0["name"] as? String
-                        else { return nil }
-                        
-                        return User(id: id, name: name)
-                    }
-                    
-                    let categoryNames = data["categoryList"] as? [String] ?? []
-                    let categoryItems: [CategoryItem] = categoryNames.map {
-                        CategoryItem(name: $0)
-                    }
+                // 自分が owner か共有されている場合のみ取得
+                guard ownerId == uid || isShared else { return nil }
 
-                    return CategoryModel(
-                        id: doc.documentID,
-                        name: name,
-                        users: users,
-                        iconName: iconName,
-                        categoryList: categoryItems,
-                        createdAt: createdAt
-                    )
+                let name = data["name"] as? String ?? ""
+                let iconName = data["iconName"] as? String ?? "folder.fill"
+                let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
+
+                // UID 対応 User に変換
+                let users: [User] = usersArray.compactMap {
+                    guard
+                        let idString = $0["id"] as? String,
+                        let id = UUID(uuidString: idString),
+                        let name = $0["name"] as? String,
+                        let uid = $0["uid"] as? String
+                    else { return nil }
+
+                    return User(id: id, name: name, uid: uid,)
                 }
 
-                self.categories = categories
+                // CategoryItem も UID 対応（単独ユーザーなら "" でOK）
+                let categoryNames = data["categoryList"] as? [String] ?? []
+                let categoryItems: [CategoryItem] = categoryNames.map {
+                    CategoryItem(name: $0, uid: "")
+                }
+
+                // ここで必ず CategoryModel を返す
+                return CategoryModel(
+                    id: doc.documentID,
+                    name: name,
+                    users: users,
+                    ownerId: ownerId,
+                    iconName: iconName,
+                    categoryList: categoryItems,
+                    createdAt: createdAt
+                )
             }
+
+            self.categories = categories
+        }
     }
     
     // データ表示
     func listenCategories() {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
         db.collection("categories")
+            .whereField("ownerId", isEqualTo: uid)
             .addSnapshotListener { [weak self] snapshot, error in
-                guard let self else { return }
+                guard let self = self else { return }
                 guard let docs = snapshot?.documents else { return }
-                
+
                 let list: [CategoryModel] = docs.compactMap { doc in
                     let data = doc.data()
-                    
+
+                    let ownerId = data["ownerId"] as? String ?? ""
+                    let usersArray = data["users"] as? [[String: Any]] ?? []
+                    let isShared = usersArray.contains { $0["uid"] as? String == uid }
+
+                    // 自分が owner か共有されている場合のみ取得
+                    guard ownerId == uid || isShared else { return nil }
+
                     let name = data["name"] as? String ?? ""
                     let iconName = data["iconName"] as? String ?? "folder.fill"
                     let createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
-                    
-                    let users: [User] = (data["users"] as? [[String: Any]] ?? []).compactMap {
+
+                    // UID 対応 User に変換
+                    let users: [User] = usersArray.compactMap {
                         guard
                             let idString = $0["id"] as? String,
                             let id = UUID(uuidString: idString),
-                            let name = $0["name"] as? String
+                            let name = $0["name"] as? String,
+                            let uid = $0["uid"] as? String
                         else { return nil }
-                        
-                        return User(id: id, name: name)
+
+                        return User(id: id, name: name, uid: uid,)
                     }
-                    
-                    // categoryList: [String] → [CategoryItem]
+
+                    // CategoryItem も UID 対応（単独ユーザーなら空文字でOK）
                     let categoryNames = data["categoryList"] as? [String] ?? []
                     let categoryItems: [CategoryItem] = categoryNames.map {
-                        CategoryItem(name: $0)
+                        CategoryItem(name: $0, uid: "")
                     }
-                    
+
                     return CategoryModel(
                         id: doc.documentID,
                         name: name,
                         users: users,
+                        ownerId: ownerId,
                         iconName: iconName,
                         categoryList: categoryItems,
                         createdAt: createdAt
                     )
                 }
-                
+
                 DispatchQueue.main.async {
                     self.categories = list.sorted {
                         ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast)
@@ -107,7 +137,6 @@ class CategoryListViewModel: ObservableObject {
                 }
             }
     }
-    
     
 }
 extension ProcessInfo {

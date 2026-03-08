@@ -55,7 +55,10 @@ struct AddCategorySheet: View {
                     Button("名前追加") {
                         let trimmed = newUserName.trimmingCharacters(in: .whitespaces)
                         guard !trimmed.isEmpty else { return }
-                        users.append(User(name:trimmed))
+                        
+                        // UID はまだ未登録なので空文字で
+                        users.append(User(name: trimmed,uid: "",))
+                        
                         newUserName = ""
                         isFocused = false
                     }
