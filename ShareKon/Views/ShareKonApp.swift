@@ -13,26 +13,36 @@ import FirebaseAuth
 struct ShareWeddingCostApp: App {
     init() {
         FirebaseApp.configure()
-        signInAnonymously()
+        observeAuth()
     }
-
+    
     var body: some Scene {
         WindowGroup {
             MainView(listVM: CategoryListViewModel())
         }
     }
+    func observeAuth() {
+        _ = Auth.auth().addStateDidChangeListener { _, user in
+            
+            if let user = user {
+                print("ログイン中 UID:", user.uid)
+            } else {
+                print("ログアウト検知 → 匿名ログイン開始")
+                signInAnonymously()
+            }
+        }
+    }
     
     func signInAnonymously() {
-        if let user = Auth.auth().currentUser {
-            print("既にログイン済み UID: \(user.uid)")
-        } else {
-            Auth.auth().signInAnonymously { authResult, error in
-                if let error = error {
-                    print("匿名認証失敗: \(error)")
-                    return
-                }
-                let uid = authResult?.user.uid
-                print("匿名認証成功 UID: \(uid ?? "")")
+        Auth.auth().signInAnonymously { authResult, error in
+            
+            if let error = error {
+                print("匿名認証失敗:", error.localizedDescription)
+                return
+            }
+            
+            if let uid = authResult?.user.uid {
+                print("匿名認証成功 UID:", uid)
             }
         }
     }
