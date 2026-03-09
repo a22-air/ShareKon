@@ -18,7 +18,6 @@ class CategoryListViewModel: ObservableObject {
     init() {
         guard !ProcessInfo.isPreview else { return }
         fetchCategories()
-        listenCategories()
     }
     // データ読み込み
     func fetchCategories() {

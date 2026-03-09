@@ -76,6 +76,13 @@ struct MainView: View {
                 }
             }
         }
+        .onAppear {
+            _ = Auth.auth().addStateDidChangeListener { _, user in
+                if user != nil {
+                    listVM.listenCategories()
+                }
+            }
+        }
         // アラート表示
         .alert(
             "カテゴリを削除しますか？",
