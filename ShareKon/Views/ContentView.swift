@@ -50,23 +50,27 @@ struct ContentView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
-                if viewModel.items.isEmpty{
+                if viewModel.items.isEmpty {
                     EmptyStateView(
                         icon: "folder.badge.plus",
                         title: "支出がまだありません",
                         message: "右上の＋ボタンから支出を追加してください"
                     )
-                }
-                // MARK: - コンテンツ部分
-                if selectedTab == 3 { // 割り勘ページ
-                    SplitView(viewModel: viewModel, selectedTab: $selectedTab, category: viewModel.category)
+                } else {
+                    if selectedTab == 3 {
+                        SplitView(
+                            viewModel: viewModel,
+                            selectedTab: $selectedTab,
+                            category: viewModel.category
+                        )
                         .environmentObject(paymentData)
-                } else { // 未精算、精算済み、合計表示
-                    ExpenseListView(viewModel: viewModel, items: tabItems) { item in
-                        selectedEditingItem = item // 現在の中カテゴリ
-                        addSheetMode = .edit(item)
+                    } else {
+                        ExpenseListView(viewModel: viewModel, items: tabItems) { item in
+                            selectedEditingItem = item
+                            addSheetMode = .edit(item)
+                        }
+                        .environmentObject(paymentData)
                     }
-                    .environmentObject(paymentData)
                 }
                 
                 // MARK: - 合計表示（割り勘以外）
