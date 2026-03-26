@@ -20,7 +20,9 @@ struct MainView: View {
     @State private var categoryToDelete: CategoryModel?
     @State private var isEditing = false
     @State private var categoryViewModels: [String: CategoryViewModel] = [:]
-
+    @AppStorage("hasSeenTutorial") var hasSeenTutorial = false
+    @State private var showTutorial = false
+    
     private var headerView: some View {
         VStack(spacing: 12) {
             HStack {
@@ -62,6 +64,12 @@ struct MainView: View {
                 categoryList
             }
         }
+        .overlay {
+            TutorialOverlayView(
+                isVisible: $showTutorial,
+                message: "ここからカテゴリを追加できます"
+            )
+        }
         .onChange(of: listVM.categories) { _, newCategories in
 
             if newCategories.isEmpty {
@@ -81,6 +89,9 @@ struct MainView: View {
                 if user != nil {
                     listVM.listenCategories()
                 }
+            }
+            if !hasSeenTutorial {
+                showTutorial = true
             }
         }
         // アラート表示
