@@ -20,9 +20,11 @@ struct CategoryView: View {
         CommonAddLayout(
             title: "カテゴリ一覧",
             placeholder: "カテゴリを追加",
+            selectionMode: .single,
             inputText: $addCategory,
             items: $categories,
-            selectedItem: $selectedCategory
+            selectedItem: $selectedCategory,
+            selectedItems: .constant([])
         )
         
     }

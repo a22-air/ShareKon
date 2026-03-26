@@ -7,12 +7,19 @@
 
 import SwiftUI
 
+enum SelectionMode {
+    case single
+    case multiple
+}
+
 struct CommonAddLayout<Item: NameIdentifiable>: View {
     let title: String                 // 画面タイトル（例："カテゴリ一覧"）
     let placeholder: String           // テキストフィールドのプレースホルダ
+    let selectionMode: SelectionMode
     @Binding var inputText: String    // 入力テキスト
     @Binding var items: [Item]      // リストデータ
     @Binding var selectedItem: Item? // 選択中の項目
+    @Binding var selectedItems: [Item] // 選択中の項目（複数）
     @Environment(\.dismiss) private var dismiss
     @State private var pressedItem: String? = nil   // タップ中の行を保持
     @FocusState private var isFocused: Bool
@@ -60,8 +67,16 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         guard !isEditing else { return }
-                        selectedItem = item
-                        dismiss()
+
+                            switch selectionMode {
+                            case .single:
+                                selectedItem = item
+                                dismiss()
+
+                            case .multiple:
+                                selectedItems.append(item)
+                                dismiss()
+                            }
                     }
                 }
             }
@@ -129,10 +144,12 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
     CommonAddLayout(
         title: "カテゴリ一覧",
         placeholder: "カテゴリを追加",
+        selectionMode: .single,
         inputText: .constant(""),
         items: .constant([
-            CategoryItem(id: UUID(), name: "カテゴリA", uid:"1")
-                ]),
-        selectedItem: .constant(nil)
+            CategoryItem(id: UUID(), name: "カテゴリA", uid: "1")
+        ]),
+        selectedItem: .constant(nil),
+        selectedItems: .constant([])
     )
 }

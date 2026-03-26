@@ -97,7 +97,7 @@ struct AddView: View {
                 // 登録ユーザー（複数選択）
                 VStack(alignment: .leading, spacing: 10) {
                     NavigationLink(destination:
-                        SelectUserView(users: $viewModel.category.users, selectedUser: $selectedUser)
+                                    SelectUserView(users: $viewModel.category.users, selectedUsers: $selectedUsers)
                     ) {
                         if viewModel.category.users.isEmpty {
                             Text("ユーザーを追加してください")
