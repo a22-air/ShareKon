@@ -104,6 +104,11 @@ struct AddView: View {
                                 .foregroundColor(.red)
                         } else {
                             VStack(alignment: .leading, spacing: 8) {
+                                if selectedUsers.isEmpty {
+                                    Text("チェックを入れて参加者を選択してください")
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
                                 ForEach(viewModel.category.users, id: \.id) { user in
                                     HStack {
                                         CustomCheckBox(
