@@ -49,100 +49,115 @@ struct AddCategorySheet: View {
                     Text("参加者")
                         .font(.subheadline)
                     
+                    Text("名前を入力して追加ボタンを押してください")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
                     HStack {
-                        TextField("名前", text: $newUserName)
+                        TextField("名前を入力して追加", text: $newUserName)
                             .textFieldStyle(.roundedBorder)
                             .focused($isFocused)
-                        Button("名前追加") {
-                            let trimmed = newUserName.trimmingCharacters(in: .whitespaces)
-                            guard !trimmed.isEmpty else { return }
-                            
-                            // UID はまだ未登録なので空文字で
-                            users.append(User(name: trimmed,uid: "",))
-                            
-                            newUserName = ""
-                            isFocused = false
+                            .submitLabel(.done)
+                            .onSubmit {
+                                addUser()
+                            }
+                        
+                        Button {
+                            addUser()
+                        } label: {
+                            Label("追加", systemImage: "plus")
                         }
                         .buttonStyle(.borderedProminent)
+                        .disabled(newUserName.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
-                    
-                    if !users.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(users, id: \.self) { user in
-                                    HStack(spacing: 4) {
-                                        Text(user.name)
-                                            .padding(.vertical, 6)
-                                            .padding(.horizontal, 10)
-                                            .background(Color.gray.opacity(0.2))
-                                            .cornerRadius(16)
-                                        
-                                        Button(action: {
-                                            users.removeAll { $0.id == user.id }
-                                        }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.red)
-                                        }
+                }
+                
+                if !users.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(users, id: \.self) { user in
+                                HStack(spacing: 4) {
+                                    Text(user.name)
+                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 10)
+                                        .background(Color.gray.opacity(0.2))
+                                        .cornerRadius(16)
+                                    
+                                    Button(action: {
+                                        users.removeAll { $0.id == user.id }
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.red)
                                     }
                                 }
                             }
-                            .padding(.vertical, 4)
                         }
+                        .padding(.vertical, 4)
                     }
                 }
-                
-                VStack {
-                    HStack {
-                        Text("アイコン")
-                            .padding(.bottom, 10)
-                        Spacer()
-                    }
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(categoryIcons, id: \.self) { icon in
-                            Image(systemName: icon)
-                                .font(.title2)
-                                .frame(width: 50, height: 50)
-                                .background(
-                                    selectedIcon == icon ? Color.blue : Color.gray.opacity(0.2)
-                                )
-                                .cornerRadius(10)
-                                .onTapGesture {
-                                    selectedIcon = icon
-                                }
-                        }
-                    }
-                }
-                
-                Button(action: onSave) {
-                    Text("保存")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                }
-                .background(
-                    newCategoryName.isEmpty || users.isEmpty
-                    ? Color.gray
-                    : Color.blue
-                )
-                .cornerRadius(12)
-                .padding(.horizontal, 20)
-                .padding(.top, 50)
-                .disabled(newCategoryName.isEmpty || users.isEmpty)
-                
-                Spacer()
-                
-                Button("閉じる", action: onClose)
-                    .padding(.top, 10)
             }
-            .padding()
-            .contentShape(Rectangle())
-            .onTapGesture {
-                isFocused = false
+            
+            VStack {
+                HStack {
+                    Text("アイコン")
+                        .padding(.bottom, 10)
+                    Spacer()
+                }
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(categoryIcons, id: \.self) { icon in
+                        Image(systemName: icon)
+                            .font(.title2)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                selectedIcon == icon ? Color.blue : Color.gray.opacity(0.2)
+                            )
+                            .cornerRadius(10)
+                            .onTapGesture {
+                                selectedIcon = icon
+                            }
+                    }
+                }
             }
+            
+            Button(action: onSave) {
+                Text("保存")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .background(
+                newCategoryName.isEmpty || users.isEmpty
+                ? Color.gray
+                : Color.blue
+            )
+            .cornerRadius(12)
+            .padding(.horizontal, 20)
+            .padding(.top, 50)
+            .disabled(newCategoryName.isEmpty || users.isEmpty)
+            
+            Spacer()
+            
+            Button("閉じる", action: onClose)
+                .padding(.top, 10)
+        }
+        .padding()
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isFocused = false
         }
     }
+    
+    func addUser() {
+        let trimmed = newUserName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        
+        users.append(User(name: trimmed, uid: ""))
+        newUserName = ""
+        isFocused = false
+    }
 }
+
 
 // Preview 用ラッパー
 struct AddCategorySheetPreviewWrapper: View {
