@@ -54,24 +54,24 @@ struct ShareWeddingCostApp: App {
     }
     struct SplashView: View {
         @AppStorage("hasSeenSplash") private var hasSeenSplash: Bool = false
-        @State private var logoScale: CGFloat = 0.8
+        @State private var scale: CGFloat = 0.9
         @State private var opacity: Double = 0.0
         
         var body: some View {
             ZStack {
                 Color.white.ignoresSafeArea()
-                
+                // ロゴ
                 Image("AppLogo")
                     .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                    .offset(x: -20) // 左にずらす（数値調整）
+                    .scaledToFit()
+                    .frame(width: 300)
+                    .scaleEffect(scale)
                     .opacity(opacity)
             }
             .onAppear {
                 // ふわっと表示
                 withAnimation(.easeOut(duration: 0.8)) {
-                    logoScale = 1.0
+                    scale = 1.0
                     opacity = 1.0
                 }
                 
