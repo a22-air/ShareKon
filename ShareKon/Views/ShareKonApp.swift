@@ -11,7 +11,7 @@ import FirebaseAuth
 
 @main
 struct ShareWeddingCostApp: App {
-    @AppStorage("hasSeenSplash") private var hasSeenSplash: Bool = false
+    @State private var showSplash = true
     
     init() {
         FirebaseApp.configure()
@@ -20,10 +20,10 @@ struct ShareWeddingCostApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if hasSeenSplash {
-                MainView(listVM: CategoryListViewModel())
+            if showSplash {
+                SplashView(showSplash: $showSplash)
             } else {
-                SplashView()
+                MainView(listVM: CategoryListViewModel())
             }
         }
     }
@@ -53,7 +53,7 @@ struct ShareWeddingCostApp: App {
         }
     }
     struct SplashView: View {
-        @AppStorage("hasSeenSplash") private var hasSeenSplash: Bool = false
+        @Binding var showSplash: Bool
         @State private var scale: CGFloat = 0.9
         @State private var opacity: Double = 0.0
         
@@ -76,13 +76,13 @@ struct ShareWeddingCostApp: App {
                 }
                 
                 // 1.5秒後にフェードアウトして遷移
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         opacity = 0.0
                     }
                     
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        hasSeenSplash = true
+                        showSplash = false
                     }
                 }
             }
