@@ -74,8 +74,13 @@ struct CommonAddLayout<Item: NameIdentifiable>: View {
                                 dismiss()
 
                             case .multiple:
-                                selectedItems.append(item)
-                                dismiss()
+                                if let index = selectedItems.firstIndex(where: { $0.id == item.id }) {
+                                    selectedItems.remove(at: index)
+                                    dismiss()
+                                } else {
+                                    selectedItems.append(item)
+                                    dismiss()
+                                }
                             }
                     }
                 }
