@@ -11,6 +11,8 @@ import FirebaseAuth
 
 @main
 struct ShareWeddingCostApp: App {
+    @AppStorage("hasSeenSplash") private var hasSeenSplash: Bool = false
+    
     init() {
         FirebaseApp.configure()
         observeAuth()
@@ -18,7 +20,11 @@ struct ShareWeddingCostApp: App {
     
     var body: some Scene {
         WindowGroup {
-            MainView(listVM: CategoryListViewModel())
+            if hasSeenSplash {
+                MainView(listVM: CategoryListViewModel())
+            } else {
+                SplashView()
+            }
         }
     }
     func observeAuth() {
@@ -43,6 +49,42 @@ struct ShareWeddingCostApp: App {
             
             if let uid = authResult?.user.uid {
                 print("匿名認証成功 UID:", uid)
+            }
+        }
+    }
+    struct SplashView: View {
+        @AppStorage("hasSeenSplash") private var hasSeenSplash: Bool = false
+        @State private var logoScale: CGFloat = 0.8
+        @State private var opacity: Double = 0.0
+        
+        var body: some View {
+            ZStack {
+                Color.white.ignoresSafeArea()
+                
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .offset(x: -20) // 左にずらす（数値調整）
+                    .opacity(opacity)
+            }
+            .onAppear {
+                // ふわっと表示
+                withAnimation(.easeOut(duration: 0.8)) {
+                    logoScale = 1.0
+                    opacity = 1.0
+                }
+                
+                // 1.5秒後にフェードアウトして遷移
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        opacity = 0.0
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        hasSeenSplash = true
+                    }
+                }
             }
         }
     }

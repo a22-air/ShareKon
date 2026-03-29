@@ -144,6 +144,8 @@ struct MainView: View {
                             let newViewModel = CategoryViewModel(category: newCategory)
                             try await newViewModel.saveCategory()
                             
+                            hasSeenTutorial = true
+                            
                             newCategoryName = ""
                             users.removeAll()
                             selectedIcon = "folder.fill"
