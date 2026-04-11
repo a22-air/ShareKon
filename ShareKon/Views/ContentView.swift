@@ -186,6 +186,7 @@ struct ExpenseListView: View {
     @ObservedObject var viewModel: CategoryViewModel
     let items: [ExpenseItem]
     let onSelect: (ExpenseItem) -> Void
+    @State private var itemToDelete: ExpenseItem? = nil
 
     var body: some View {
         List {
@@ -199,7 +200,7 @@ struct ExpenseListView: View {
                             .onTapGesture { onSelect(item) }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
-                                    Task { try? await viewModel.deleteItem(item) }
+                                    itemToDelete = item
                                 } label: {
                                     Label("削除", systemImage: "trash")
                                 }
@@ -219,15 +220,33 @@ struct ExpenseListView: View {
             }
         }
         .listStyle(.plain)
-        .scrollContentBackground(.hidden) // Listのデフォルト背景を非表示
+        .scrollContentBackground(.hidden)
         .background(Color.skCream)
+        .alert("支出を削除", isPresented: Binding(
+            get: { itemToDelete != nil },
+            set: { if !$0 { itemToDelete = nil } }
+        )) {
+            Button("削除", role: .destructive) {
+                if let item = itemToDelete {
+                    Task { try? await viewModel.deleteItem(item) }
+                }
+                itemToDelete = nil
+            }
+            Button("キャンセル", role: .cancel) {
+                itemToDelete = nil
+            }
+        } message: {
+            if let item = itemToDelete {
+                Text("「\(item.category.name)」¥\(item.totalAmount)を削除します。この操作は取り消せません。")
+            }
+        }
     }
 
     private var groupedByDate: [(key: String, value: [ExpenseItem])] {
         let df = DateFormatter.displayDate
         let grouped = Dictionary(grouping: items) { df.string(from: $0.date) }
         return grouped.sorted {
-            (df.date(from: $0.key) ?? Date()) < (df.date(from: $1.key) ?? Date())
+            (df.date(from: $0.key) ?? Date()) > (df.date(from: $1.key) ?? Date())
         }
     }
 }
