@@ -10,9 +10,16 @@ struct AddCategorySheet: View {
     @Binding var users: [User]
     @Binding var selectedIcon: String
     @FocusState private var isFocused: Bool
-    @State var newUserName: String = ""
+    @State private var name0: String = ""
+    @State private var name1: String = ""
+    @State private var showValidation = false
     let onSave: () -> Void
     let onClose: () -> Void
+
+    private var isCategoryEmpty: Bool { newCategoryName.trimmingCharacters(in: .whitespaces).isEmpty }
+    private var isName0Empty: Bool { name0.trimmingCharacters(in: .whitespaces).isEmpty }
+    private var isName1Empty: Bool { name1.trimmingCharacters(in: .whitespaces).isEmpty }
+    private var isSaveEnabled: Bool { !isCategoryEmpty && !isName0Empty && !isName1Empty }
 
     let columns = [GridItem(.adaptive(minimum: 56))]
 
@@ -72,7 +79,7 @@ struct AddCategorySheet: View {
                                 Image(systemName: "pencil")
                                     .font(.system(size: 13))
                                     .foregroundColor(.skRose)
-                                TextField("例: 結婚式・新婚旅行", text: $newCategoryName)
+                                TextField("カテゴリ名を入力してください", text: $newCategoryName)
                                     .font(.system(.body, design: .rounded))
                                     .focused($isFocused)
                             }
@@ -82,89 +89,61 @@ struct AddCategorySheet: View {
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(Color.skRoseMid.opacity(0.5), lineWidth: 1)
+                                    .strokeBorder(
+                                        showValidation && isCategoryEmpty ? Color.red.opacity(0.6) : Color.skRoseMid.opacity(0.5),
+                                        lineWidth: showValidation && isCategoryEmpty ? 1.5 : 1
+                                    )
                             )
+                            if showValidation && isCategoryEmpty {
+                                Text("カテゴリ名を入力してください")
+                                    .font(.system(size: 11, design: .rounded).weight(.medium))
+                                    .foregroundColor(.red.opacity(0.7))
+                            }
                         }
                     }
 
-                    // 参加者入力
+                    // 参加者入力（2名固定）
                     SKSheetCard {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 12) {
                             SKSheetLabel(icon: "person.2.fill", text: "参加者")
 
-                            Text("名前を入力して追加ボタンを押してください")
-                                .font(.system(.caption, design: .rounded))
-                                .foregroundColor(.skTextSecondary)
-
-                            HStack(spacing: 8) {
-                                HStack {
-                                    Image(systemName: "person")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(.skRose)
-                                    TextField("名前を入力", text: $newUserName)
-                                        .font(.system(.body, design: .rounded))
-                                        .focused($isFocused)
-                                        .submitLabel(.done)
-                                        .onSubmit { addUser() }
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 11)
-                                .background(Color.skCream)
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .strokeBorder(Color.skRoseMid.opacity(0.5), lineWidth: 1)
-                                )
-
-                                Button(action: addUser) {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 42, height: 42)
-                                        .background(
-                                            Group {
-                                                if newUserName.trimmingCharacters(in: .whitespaces).isEmpty {
-                                                    Color.skTextTertiary
-                                                } else {
-                                                    LinearGradient(
-                                                        colors: [.skRose, .skCoral],
-                                                        startPoint: .topLeading,
-                                                        endPoint: .bottomTrailing
-                                                    )
-                                                }
-                                            }
+                            ForEach([0, 1], id: \.self) { i in
+                                let binding = i == 0 ? $name0 : $name1
+                                let isEmpty = i == 0 ? isName0Empty : isName1Empty
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 12) {
+                                        SKAvatar(
+                                            name: (i == 0 ? name0 : name1).isEmpty ? "?" : (i == 0 ? name0 : name1),
+                                            size: 36,
+                                            colorIndex: i
                                         )
-                                        .cornerRadius(12)
-                                }
-                                .disabled(newUserName.trimmingCharacters(in: .whitespaces).isEmpty)
-                                .animation(.easeInOut(duration: 0.15), value: newUserName)
-                            }
-
-                            // 追加済みユーザータグ
-                            if !users.isEmpty {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(Array(users.enumerated()), id: \.element.id) { i, user in
-                                            HStack(spacing: 6) {
-                                                SKAvatar(name: user.name, size: 22, colorIndex: i)
-                                                Text(user.name)
-                                                    .font(.system(.caption, design: .rounded).weight(.medium))
-                                                    .foregroundColor(.skTextPrimary)
-                                                Button {
-                                                    users.removeAll { $0.id == user.id }
-                                                } label: {
-                                                    Image(systemName: "xmark.circle.fill")
-                                                        .font(.system(size: 14))
-                                                        .foregroundColor(.skRoseMid)
-                                                }
-                                            }
-                                            .padding(.vertical, 6)
-                                            .padding(.horizontal, 10)
-                                            .background(Color.skRoseLight)
-                                            .cornerRadius(20)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(i == 0 ? "1人目" : "2人目")
+                                                .font(.system(size: 10, design: .rounded).weight(.semibold))
+                                                .foregroundColor(.skTextTertiary)
+                                            TextField("名前を入力してください", text: binding)
+                                                .font(.system(.body, design: .rounded))
+                                                .focused($isFocused)
+                                                .submitLabel(i == 0 ? .next : .done)
                                         }
                                     }
-                                    .padding(.vertical, 2)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(Color.skCream)
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .strokeBorder(
+                                                showValidation && isEmpty ? Color.red.opacity(0.6) : Color.skRoseMid.opacity(0.4),
+                                                lineWidth: showValidation && isEmpty ? 1.5 : 1
+                                            )
+                                    )
+                                    if showValidation && isEmpty {
+                                        Text("\(i == 0 ? "1人目" : "2人目")の名前を入力してください")
+                                            .font(.system(size: 11, design: .rounded).weight(.medium))
+                                            .foregroundColor(.red.opacity(0.7))
+                                            .padding(.leading, 4)
+                                    }
                                 }
                             }
                         }
@@ -211,7 +190,12 @@ struct AddCategorySheet: View {
                     }
 
                     // 保存ボタン
-                    Button(action: onSave) {
+                    Button {
+                        isFocused = false
+                        showValidation = true
+                        guard isSaveEnabled else { return }
+                        onSave()
+                    } label: {
                         HStack(spacing: 6) {
                             SKHeartAccent(size: 12, color: .white)
                             Text("保存する")
@@ -221,24 +205,12 @@ struct AddCategorySheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
-                            Group {
-                                if newCategoryName.isEmpty || users.isEmpty {
-                                    Color.skTextTertiary
-                                } else {
-                                    LinearGradient(colors: [.skRose, .skCoral],
-                                                   startPoint: .leading, endPoint: .trailing)
-                                }
-                            }
+                            LinearGradient(colors: [.skRose, .skCoral],
+                                           startPoint: .leading, endPoint: .trailing)
                         )
                         .cornerRadius(16)
-                        .shadow(
-                            color: newCategoryName.isEmpty || users.isEmpty
-                                ? .clear : Color.skRose.opacity(0.35),
-                            radius: 8, x: 0, y: 4
-                        )
+                        .shadow(color: Color.skRose.opacity(0.35), radius: 8, x: 0, y: 4)
                     }
-                    .disabled(newCategoryName.isEmpty || users.isEmpty)
-                    .animation(.easeInOut(duration: 0.15), value: newCategoryName.isEmpty || users.isEmpty)
 
                     // 閉じるボタン
                     Button(action: onClose) {
@@ -254,14 +226,22 @@ struct AddCategorySheet: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { isFocused = false }
+        .onAppear {
+            // 編集時: 既存ユーザー名をフィールドに反映
+            name0 = users.indices.contains(0) ? users[0].name : ""
+            name1 = users.indices.contains(1) ? users[1].name : ""
+        }
+        .onChange(of: name0) { _, new in syncUsers() }
+        .onChange(of: name1) { _, new in syncUsers() }
     }
 
-    func addUser() {
-        let trimmed = newUserName.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        users.append(User(name: trimmed, uid: ""))
-        newUserName = ""
-        isFocused = false
+    private func syncUsers() {
+        let u0 = users.indices.contains(0) ? users[0] : User(name: "", uid: "")
+        let u1 = users.indices.contains(1) ? users[1] : User(name: "", uid: "")
+        users = [
+            User(id: u0.id, name: name0, uid: u0.uid),
+            User(id: u1.id, name: name1, uid: u1.uid)
+        ]
     }
 }
 
@@ -306,7 +286,7 @@ private extension Color {
 
 struct AddCategorySheetPreviewWrapper: View {
     @State var newCategoryName = ""
-    @State var users: [User] = []
+    @State var users: [User] = [User(name: "", uid: ""), User(name: "", uid: "")]
     @State var selectedIcon = "sparkles"
 
     var body: some View {
