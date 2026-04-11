@@ -92,7 +92,7 @@ class CategoryViewModel: ObservableObject {
             data["updatedAt"] = FieldValue.serverTimestamp()
         }
 
-        try await ref.setData(data, merge: false)
+        try await ref.setData(data, merge: true)
     }
     
     
@@ -167,12 +167,12 @@ class CategoryViewModel: ObservableObject {
             let fetchedIDs = Set(fetched.map { $0.id })
             self.items.removeAll { !fetchedIDs.contains($0.id) }
             
-            // 並び順を安定させる
+            // 新しい順（日付降順 → 同日内はcreatedAt降順）
             self.items.sort {
                 if $0.date != $1.date {
-                    return $0.date < $1.date
+                    return $0.date > $1.date
                 } else {
-                    return ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast)
+                    return ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast)
                 }
             }
             

@@ -72,7 +72,9 @@ class CategoryListViewModel: ObservableObject {
                 )
             }
 
-            self.categories = categories
+            self.categories = categories.sorted {
+                ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast)
+            }
         }
     }
     
