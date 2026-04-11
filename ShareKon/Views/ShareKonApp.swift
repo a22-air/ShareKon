@@ -1,8 +1,5 @@
 //
 //  ShareKonApp.swift
-//  ShareKon
-//
-//  Created by 谷口愛利 on 2025/08/06.
 //
 
 import SwiftUI
@@ -12,12 +9,11 @@ import FirebaseAuth
 @main
 struct ShareWeddingCostApp: App {
     @State private var showSplash = true
-    
+
     init() {
         FirebaseApp.configure()
-        observeAuth()
     }
-    
+
     var body: some Scene {
         WindowGroup {
             if showSplash {
@@ -27,40 +23,17 @@ struct ShareWeddingCostApp: App {
             }
         }
     }
-    func observeAuth() {
-        _ = Auth.auth().addStateDidChangeListener { _, user in
-            
-            if let user = user {
-                print("ログイン中 UID:", user.uid)
-            } else {
-                print("ログアウト検知 → 匿名ログイン開始")
-                signInAnonymously()
-            }
-        }
-    }
-    
-    func signInAnonymously() {
-        Auth.auth().signInAnonymously { authResult, error in
-            
-            if let error = error {
-                print("匿名認証失敗:", error.localizedDescription)
-                return
-            }
-            
-            if let uid = authResult?.user.uid {
-                print("匿名認証成功 UID:", uid)
-            }
-        }
-    }
+
     struct SplashView: View {
         @Binding var showSplash: Bool
         @State private var scale: CGFloat = 0.9
         @State private var opacity: Double = 0.0
-        
+        @State private var isAuthReady = false
+        @State private var isAnimationDone = false
+
         var body: some View {
             ZStack {
                 Color.white.ignoresSafeArea()
-                // ロゴ
                 Image("AppLogo")
                     .resizable()
                     .scaledToFit()
@@ -69,22 +42,42 @@ struct ShareWeddingCostApp: App {
                     .opacity(opacity)
             }
             .onAppear {
-                // ふわっと表示
                 withAnimation(.easeOut(duration: 0.8)) {
                     scale = 1.0
                     opacity = 1.0
                 }
-                
-                // 1.5秒後にフェードアウトして遷移
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        opacity = 0.0
-                    }
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        showSplash = false
-                    }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    isAnimationDone = true
+                    tryDismiss()
                 }
+                observeAuth()
+            }
+        }
+
+        private func tryDismiss() {
+            guard isAuthReady && isAnimationDone else { return }
+            withAnimation(.easeInOut(duration: 0.4)) { opacity = 0.0 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                showSplash = false
+            }
+        }
+
+        private func observeAuth() {
+            _ = Auth.auth().addStateDidChangeListener { _, user in
+                if user != nil {
+                    isAuthReady = true
+                    tryDismiss()
+                } else {
+                    signInAnonymously()
+                }
+            }
+        }
+
+        private func signInAnonymously() {
+            Auth.auth().signInAnonymously { _, error in
+                if let error = error { print("匿名認証失敗:", error.localizedDescription) }
+                isAuthReady = true
+                tryDismiss()
             }
         }
     }
