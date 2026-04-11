@@ -5,10 +5,12 @@
 
 import SwiftUI
 
+// MARK: - SplitView
+
 struct SplitView: View {
     @EnvironmentObject var paymentData: ExpenseData
     @ObservedObject var viewModel: CategoryViewModel
-    @State private var userValues: [User.ID: Int] = [:]
+    @State private var ratioValue: Double = 5  // 0〜10、デフォルト 5:5
     @State private var hasInitialized = false
     @State private var assistanceAmount: Int = 0
     @State private var calculatedDistributed: [String: [User.ID: Int]]? = nil
@@ -21,23 +23,26 @@ struct SplitView: View {
     @State private var isCalculating = false
 
     var category: CategoryModel
+
     private var categoryItems: [ExpenseItem] { viewModel.items }
+    private var allUsers: [User] { viewModel.category.users }
+    private var user0: User? { allUsers.first }
+    private var user1: User? { allUsers.dropFirst().first }
 
     var normalizedRatios: [User.ID: Double] {
-        let total = userValues.values.reduce(0, +)
-        guard total > 0 else { return [:] }
-        return userValues.mapValues { Double($0) / Double(total) }
+        guard let u0 = user0, let u1 = user1 else { return [:] }
+        let r0 = Int(ratioValue.rounded())
+        let r1 = 10 - r0
+        guard r0 + r1 > 0 else { return [:] }
+        return [
+            u0.id: Double(r0) / 10.0,
+            u1.id: Double(r1) / 10.0
+        ]
     }
-    private var allUsers: [User] { viewModel.category.users }
+
     private var paidTotal: Int { categoryItems.filter { $0.isPaid }.map { $0.totalAmount }.reduce(0, +) }
     private var unpaidTotal: Int { categoryItems.filter { !$0.isPaid }.map { $0.totalAmount }.reduce(0, +) }
     private var total: Int { paidTotal + unpaidTotal }
-
-    private let numberFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .none
-        return f
-    }()
 
     var body: some View {
         ZStack {
@@ -71,7 +76,7 @@ struct SplitView: View {
                                     .focused($isFocused)
                                     .font(.system(.body, design: .rounded))
                                     .multilineTextAlignment(.trailing)
-                                    .onChange(of: assistanceText) { oldValue, newValue in
+                                    .onChange(of: assistanceText) { _, newValue in
                                         let filtered = newValue.filter { "0123456789".contains($0) }
                                         if filtered != newValue { assistanceText = filtered }
                                         assistanceAmount = Int(filtered) ?? 0
@@ -87,40 +92,56 @@ struct SplitView: View {
                             )
                         }
 
-                        // 割り勘比率
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("割り勘比率")
-                                .font(.system(.caption, design: .rounded).weight(.semibold))
-                                .foregroundColor(.skTextSecondary)
+                        // 割り勘比率スライダー
+                        if let u0 = user0, let u1 = user1 {
+                            let r0 = Int(ratioValue.rounded())
+                            let r1 = 10 - r0
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("割り勘比率")
+                                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                                    .foregroundColor(.skTextSecondary)
 
-                            ForEach(Array(viewModel.category.users.enumerated()), id: \.element.id) { i, user in
-                                let binding = Binding<Int>(
-                                    get: { userValues[user.id] ?? 0 },
-                                    set: { userValues[user.id] = max(0, $0) }
-                                )
-                                HStack(spacing: 10) {
-                                    SKAvatar(name: user.name, size: 30, colorIndex: i)
-                                    Text(user.name)
-                                        .font(.system(.body, design: .rounded))
+                                // 比率ラベル
+                                HStack {
+                                    SKAvatar(name: u0.name, size: 26, colorIndex: 0)
+                                    Text(u0.name)
+                                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
                                         .foregroundColor(.skTextPrimary)
                                     Spacer()
-                                    TextField("比率", value: binding, formatter: numberFormatter)
-                                        .keyboardType(.numberPad)
-                                        .focused($isFocused)
-                                        .font(.system(.body, design: .rounded).weight(.semibold))
-                                        .multilineTextAlignment(.center)
-                                        .frame(width: 60)
-                                        .padding(.vertical, 8)
-                                        .background(Color.skCream)
-                                        .cornerRadius(10)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .strokeBorder(Color.skRoseMid.opacity(0.5), lineWidth: 1)
-                                        )
+                                    Text("\(r0)")
+                                        .font(.system(.title2, design: .rounded).weight(.bold))
+                                        .foregroundColor(.skRose)
+                                    Text("：")
+                                        .font(.system(.title2, design: .rounded).weight(.bold))
+                                        .foregroundColor(.skTextTertiary)
+                                    Text("\(r1)")
+                                        .font(.system(.title2, design: .rounded).weight(.bold))
+                                        .foregroundColor(.skCoral)
+                                    Spacer()
+                                    SKAvatar(name: u1.name, size: 26, colorIndex: 1)
+                                    Text(u1.name)
+                                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                        .foregroundColor(.skTextPrimary)
                                 }
-                                .padding(10)
-                                .background(Color.skCream)
-                                .cornerRadius(12)
+
+                                // スライダー
+                                Slider(value: $ratioValue, in: 0...10, step: 1)
+                                    .tint(.skRose)
+
+                                // 端ラベル
+                                HStack {
+                                    Text("\(u0.name)全額")
+                                        .font(.system(size: 10, design: .rounded))
+                                        .foregroundColor(.skTextTertiary)
+                                    Spacer()
+                                    Text("5:5")
+                                        .font(.system(size: 10, design: .rounded))
+                                        .foregroundColor(.skTextTertiary)
+                                    Spacer()
+                                    Text("\(u1.name)全額")
+                                        .font(.system(size: 10, design: .rounded))
+                                        .foregroundColor(.skTextTertiary)
+                                }
                             }
                         }
 
@@ -137,50 +158,60 @@ struct SplitView: View {
                     .padding(.horizontal, 20)
 
                     // --- 結果カード群 ---
-                    VStack(spacing: 12) {
+                    if let distributed = calculatedDistributed {
+                        VStack(spacing: 12) {
 
-                        CategorySplitView(
-                            title: "合計",
-                            totalAmount: total - displayedAssistanceAmount,
-                            distributed: calculatedDistributed?["total"] ?? [:],
-                            users: viewModel.category.users,
-                            displayedAssistanceAmount: displayedAssistanceAmount
-                        )
+                            // 精算サマリー
+                            if let u0 = user0, let u1 = user1 {
+                                SettlementSummaryCard(
+                                    user0: u0,
+                                    user1: u1,
+                                    balance0: distributed["total"]?[u0.id] ?? 0
+                                )
+                            }
 
-                        SectionCard(title: "精算済み", isExpanded: $showPaid) {
                             CategorySplitView(
-                                title: "精算済み",
-                                totalAmount: paidTotal - displayedAssistanceAmount,
-                                distributed: calculatedDistributed?["paid"] ?? [:],
+                                title: "合計",
+                                totalAmount: total - displayedAssistanceAmount,
+                                distributed: distributed["total"] ?? [:],
+                                shares: distributed["totalShares"] ?? [:],
                                 users: viewModel.category.users,
-                                displayedAssistanceAmount: displayedAssistanceAmount
+                                displayedAssistanceAmount: displayedAssistanceAmount,
+                                userRatios: normalizedRatios
                             )
-                        }
 
-                        SectionCard(title: "未精算", isExpanded: $showUnpaid) {
-                            CategorySplitView(
-                                title: "未精算",
-                                totalAmount: unpaidTotal - displayedAssistanceAmount,
-                                distributed: calculatedDistributed?["unpaid"] ?? [:],
-                                users: viewModel.category.users,
-                                displayedAssistanceAmount: displayedAssistanceAmount
-                            )
+                            SectionCard(title: "精算済み", isExpanded: $showPaid) {
+                                CategorySplitView(
+                                    title: "精算済み",
+                                    totalAmount: paidTotal,
+                                    distributed: distributed["paid"] ?? [:],
+                                    shares: distributed["paidShares"] ?? [:],
+                                    users: viewModel.category.users,
+                                    displayedAssistanceAmount: 0,
+                                    userRatios: normalizedRatios
+                                )
+                            }
+
+                            SectionCard(title: "未精算", isExpanded: $showUnpaid) {
+                                CategorySplitView(
+                                    title: "未精算",
+                                    totalAmount: unpaidTotal,
+                                    distributed: distributed["unpaid"] ?? [:],
+                                    shares: distributed["unpaidShares"] ?? [:],
+                                    users: viewModel.category.users,
+                                    displayedAssistanceAmount: 0,
+                                    userRatios: normalizedRatios
+                                )
+                            }
                         }
+                        .padding(.horizontal, 20)
                     }
-                    .padding(.horizontal, 20)
 
                     Spacer(minLength: 24)
                 }
                 .padding(.top, 16)
             }
             .onAppear {
-                for user in viewModel.category.users {
-                    if hasAmount(user) {
-                        userValues[user.id] = 1
-                    } else {
-                        userValues[user.id] = 0
-                    }
-                }
                 if !hasInitialized {
                     hasInitialized = true
                     calculate(showLoading: false)
@@ -209,12 +240,6 @@ struct SplitView: View {
                 Button("完了") { isFocused = false }
                     .foregroundColor(.skRose)
             }
-        }
-    }
-
-    func hasAmount(_ user: User) -> Bool {
-        categoryItems.contains { item in
-            (item.userAmounts[user.id] ?? 0) > 0
         }
     }
 
@@ -252,21 +277,122 @@ struct SplitView: View {
         }
         if showLoading { isCalculating = true }
         let assist = assistanceAmount
-        let adjustedTotal = total - assist
-        let adjustedPaid = paidTotal - assist
-        let adjustedUnpaid = unpaidTotal - assist
-        let totalResult = distribute(amount: adjustedTotal, ratios: normalizedRatios)
-        let paidResult = distribute(amount: adjustedPaid, ratios: normalizedRatios)
-        let unpaidResult = distribute(amount: adjustedUnpaid, ratios: normalizedRatios)
+        let ratios = normalizedRatios
+
+        // 各ユーザーが実際に支払った金額を集計
+        let paidByUserTotal: [User.ID: Int] = allUsers.reduce(into: [:]) { result, user in
+            result[user.id] = categoryItems.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
+        }
+        let paidByUserPaid: [User.ID: Int] = allUsers.reduce(into: [:]) { result, user in
+            result[user.id] = categoryItems.filter { $0.isPaid }.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
+        }
+        let paidByUserUnpaid: [User.ID: Int] = allUsers.reduce(into: [:]) { result, user in
+            result[user.id] = categoryItems.filter { !$0.isPaid }.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
+        }
+
+        // 合計: 差し引き金額を考慮してシェアを計算
+        let adjustedTotal = max(0, total - assist)
+        let totalShares = distribute(amount: adjustedTotal, ratios: ratios)
+
+        // 精算済み・未精算: 差し引き金額は合計にのみ適用するため、そのまま使う
+        let paidShares = distribute(amount: paidTotal, ratios: ratios)
+        let unpaidShares = distribute(amount: unpaidTotal, ratios: ratios)
+
+        // 合計のネット残高: 差し引き金額を比率に応じて按分してpaidに加算することで残高合計を0に保つ
+        // (例: assist=10,000, ratio=1:1 → 各自5,000ずつ按分クレジット)
+        let totalResult = allUsers.reduce(into: [User.ID: Int]()) { result, user in
+            let assistCredit = Int((Double(assist) * (ratios[user.id] ?? 0)).rounded())
+            let effectivePaid = (paidByUserTotal[user.id] ?? 0) - assistCredit
+            result[user.id] = (totalShares[user.id] ?? 0) - effectivePaid
+        }
+
+        // 精算済み・未精算のネット残高: 差し引き金額なしで計算
+        let paidResult = allUsers.reduce(into: [User.ID: Int]()) { result, user in
+            result[user.id] = (paidShares[user.id] ?? 0) - (paidByUserPaid[user.id] ?? 0)
+        }
+        let unpaidResult = allUsers.reduce(into: [User.ID: Int]()) { result, user in
+            result[user.id] = (unpaidShares[user.id] ?? 0) - (paidByUserUnpaid[user.id] ?? 0)
+        }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             displayedAssistanceAmount = assist
             calculatedDistributed = [
                 "total": totalResult,
                 "paid": paidResult,
-                "unpaid": unpaidResult
+                "unpaid": unpaidResult,
+                "totalShares": totalShares,
+                "paidShares": paidShares,
+                "unpaidShares": unpaidShares
             ]
             if showLoading { isCalculating = false }
         }
+    }
+}
+
+// MARK: - SettlementSummaryCard
+
+private struct SettlementSummaryCard: View {
+    let user0: User
+    let user1: User
+    let balance0: Int  // user0のネット残高（正=支払い、負=受け取り）
+
+    private var payer: User { balance0 > 0 ? user0 : user1 }
+    private var receiver: User { balance0 > 0 ? user1 : user0 }
+    private var amount: Int { abs(balance0) }
+    private var isSettled: Bool { balance0 == 0 }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            if isSettled {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.skPaid)
+                Text("精算済みです！")
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundColor(.skPaid)
+            } else {
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.skRose)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 4) {
+                        Text(payer.name)
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                            .foregroundColor(.skTextPrimary)
+                        Text("→")
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundColor(.skTextTertiary)
+                        Text(receiver.name)
+                            .font(.system(.subheadline, design: .rounded).weight(.bold))
+                            .foregroundColor(.skTextPrimary)
+                    }
+                    Text("¥\(amount) 支払えばOK")
+                        .font(.system(size: 13, design: .rounded).weight(.medium))
+                        .foregroundColor(.skRose)
+                }
+
+                Spacer()
+
+                Text("¥\(amount)")
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .foregroundColor(.skRose)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            isSettled
+            ? AnyView(Color.skPaid.opacity(0.08))
+            : AnyView(LinearGradient(colors: [Color.skRose.opacity(0.08), Color.skCoral.opacity(0.05)], startPoint: .leading, endPoint: .trailing))
+        )
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(isSettled ? Color.skPaid.opacity(0.3) : Color.skRose.opacity(0.2), lineWidth: 1)
+        )
+        .shadow(color: Color.skShadow, radius: 6, x: 0, y: 2)
     }
 }
 
@@ -323,8 +449,10 @@ private struct CategorySplitView: View {
     let title: String
     let totalAmount: Int
     let distributed: [User.ID: Int]
+    let shares: [User.ID: Int]
     let users: [User]
     let displayedAssistanceAmount: Int
+    let userRatios: [User.ID: Double]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -363,14 +491,16 @@ private struct CategorySplitView: View {
                 .frame(height: 1)
 
             ForEach(Array(users.enumerated()), id: \.element.id) { i, user in
-                let amount = distributed[user.id] ?? 0
+                let balance = distributed[user.id] ?? 0
+                let share = shares[user.id] ?? 0
+                let isExcluded = (userRatios[user.id] ?? 0) == 0
                 HStack(spacing: 10) {
                     SKAvatar(name: user.name, size: 28, colorIndex: i)
                     Text(user.name)
                         .font(.system(.subheadline, design: .rounded))
-                        .foregroundColor(amount == 0 ? .skTextTertiary : .skTextPrimary)
+                        .foregroundColor(isExcluded ? .skTextTertiary : .skTextPrimary)
                     Spacer()
-                    if amount == 0 {
+                    if isExcluded {
                         Text("対象外")
                             .font(.system(size: 11, design: .rounded).weight(.medium))
                             .foregroundColor(.skTextTertiary)
@@ -378,10 +508,37 @@ private struct CategorySplitView: View {
                             .padding(.vertical, 3)
                             .background(Color.skBeige)
                             .cornerRadius(8)
+                    } else if balance > 0 {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("¥\(share)")
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .foregroundColor(.skTextPrimary)
+                            Text("¥\(balance) 支払い")
+                                .font(.system(size: 11, design: .rounded).weight(.medium))
+                                .foregroundColor(.skRose)
+                        }
+                    } else if balance < 0 {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("¥\(share)")
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .foregroundColor(.skTextPrimary)
+                            Text("¥\(abs(balance)) 受け取り")
+                                .font(.system(size: 11, design: .rounded).weight(.medium))
+                                .foregroundColor(.skPaid)
+                        }
                     } else {
-                        Text("¥\(amount)円")
-                            .font(.system(.subheadline, design: .rounded).weight(.bold))
-                            .foregroundColor(.skTextPrimary)
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("¥\(share)")
+                                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                                .foregroundColor(.skTextPrimary)
+                            Text("精算済み")
+                                .font(.system(size: 11, design: .rounded).weight(.medium))
+                                .foregroundColor(.skPaid)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Color.skPaid.opacity(0.1))
+                                .cornerRadius(8)
+                        }
                     }
                 }
                 .padding(.vertical, 2)
@@ -398,8 +555,6 @@ private struct CategorySplitView: View {
 // MARK: - Preview
 
 #Preview {
-    @Previewable @State var previewSelectedCategory: String? = "旅行"
-
     let sampleCategory = CategoryModel(
         name: "旅行",
         users: [User(name: "Airi", uid: "1"), User(name: "太郎", uid: "2")],
