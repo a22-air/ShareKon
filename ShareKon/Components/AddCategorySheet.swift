@@ -24,6 +24,8 @@ struct AddCategorySheet: View {
     let columns = [GridItem(.adaptive(minimum: 56))]
 
     let categoryIcons = [
+        // デフォルト
+        "folder.fill",
         // 生活・家
         "house.fill", "bed.double.fill", "sofa.fill", "washer.fill",
         "refrigerator.fill", "lightbulb.fill", "key.fill", "lock.fill",
@@ -149,7 +151,6 @@ struct AddCategorySheet: View {
                         }
                     }
 
-                    // アイコン選択
                     // アイコン選択
                     SKSheetCard {
                         VStack(alignment: .leading, spacing: 12) {
