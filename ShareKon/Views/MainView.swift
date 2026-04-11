@@ -18,7 +18,7 @@ struct MainView: View {
     @State private var isEditing = false
     @State private var categoryViewModels: [String: CategoryViewModel] = [:]
     @AppStorage("hasSeenTutorial") var hasSeenTutorial = false
-    @State private var showTutorial = true
+    @State private var showTutorial = false
     @State private var isLoading = true
     
     var body: some View {
