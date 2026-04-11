@@ -176,27 +176,28 @@ struct AddView: View {
                                             .foregroundColor(.skTextPrimary)
                                     }
 
-                                    ForEach(selectedUsers.indices, id: \.self) { index in
-                                        let user = selectedUsers[index]
+                                    ForEach(Array(selectedUsers.enumerated()), id: \.element.id) { index, user in
                                         let binding = Binding(
                                             get: { userAmounts[user.id] ?? "" },
                                             set: { userAmounts[user.id] = $0 }
                                         )
                                         let availableUsers: [User] = viewModel.category.users.filter { u in
-                                            !selectedUsers.contains(where: { $0.id == u.id && u.id != selectedUsers[index].id })
+                                            !selectedUsers.contains(where: { $0.id == u.id && u.id != user.id })
                                         }
 
                                         HStack(spacing: 10) {
                                             // ユーザーピッカー
                                             Picker("", selection: Binding(
-                                                get: { selectedUsers[index] },
+                                                get: { user },
                                                 set: { newUser in
-                                                    let oldUser = selectedUsers[index]
-                                                    selectedUsers[index] = newUser
-                                                    if let amount = userAmounts[oldUser.id] {
-                                                        userAmounts[newUser.id] = amount
+                                                    if let idx = selectedUsers.firstIndex(where: { $0.id == user.id }) {
+                                                        let oldUser = selectedUsers[idx]
+                                                        selectedUsers[idx] = newUser
+                                                        if let amount = userAmounts[oldUser.id] {
+                                                            userAmounts[newUser.id] = amount
+                                                        }
+                                                        userAmounts[oldUser.id] = nil
                                                     }
-                                                    userAmounts[oldUser.id] = nil
                                                 }
                                             )) {
                                                 ForEach(availableUsers, id: \.id) { u in
@@ -232,9 +233,8 @@ struct AddView: View {
 
                                             // 削除ボタン
                                             Button {
-                                                let u = selectedUsers[index]
-                                                selectedUsers.remove(at: index)
-                                                userAmounts[u.id] = nil
+                                                selectedUsers.removeAll { $0.id == user.id }
+                                                userAmounts[user.id] = nil
                                             } label: {
                                                 Image(systemName: "trash.fill")
                                                     .font(.system(size: 13))
@@ -424,7 +424,7 @@ struct AddView: View {
             amounts[user.id] = Int(value) ?? 0
         }
         let total = amounts.values.reduce(0, +)
-        let uid = Auth.auth().currentUser!.uid
+        guard let uid = Auth.auth().currentUser?.uid else { return }
         let itemToSave: ExpenseItem
         if var editing = editingItem {
             editing.category = category
