@@ -10,7 +10,7 @@ import FirebaseAuth
 struct MainView: View {
     @StateObject var expenseData = ExpenseData()
     @StateObject var listVM = CategoryListViewModel()
-    @State private var users: [User] = []
+    @State private var users: [User] = [User(name: "", uid: ""), User(name: "", uid: "")]
     @State private var showAddCategorySheet = false
     @State private var newCategoryName = ""
     @State private var selectedIcon: String = "folder.fill"
@@ -97,7 +97,9 @@ struct MainView: View {
                             let vm = CategoryViewModel(category: newCategory)
                             try await vm.saveCategory()
                             hasSeenTutorial = true
-                            newCategoryName = ""; users.removeAll(); selectedIcon = "folder.fill"
+                            newCategoryName = ""
+                            users = [User(name: "", uid: ""), User(name: "", uid: "")]
+                            selectedIcon = "folder.fill"
                             showAddCategorySheet = false
                         } catch { print("保存失敗: \(error)") }
                     }
