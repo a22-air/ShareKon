@@ -64,6 +64,24 @@ struct MainView: View {
             }
             if !hasSeenTutorial { showTutorial = true }
         }
+        .alert("カテゴリを削除", isPresented: Binding(
+            get: { categoryToDelete != nil },
+            set: { if !$0 { categoryToDelete = nil } }
+        )) {
+            Button("削除", role: .destructive) {
+                if let category = categoryToDelete {
+                    deleteCategory(category)
+                }
+                categoryToDelete = nil
+            }
+            Button("キャンセル", role: .cancel) {
+                categoryToDelete = nil
+            }
+        } message: {
+            if let category = categoryToDelete {
+                Text("「\(category.name)」とすべての支出データを削除します。この操作は取り消せません。")
+            }
+        }
         .sheet(isPresented: $showAddCategorySheet) {
             AddCategorySheet(
                 newCategoryName: $newCategoryName,
