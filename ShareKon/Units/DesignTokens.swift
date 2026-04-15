@@ -2,35 +2,50 @@
 //  DesignTokens.swift
 //  ShareKon
 //
-//  カップル・夫婦向けデザイントークン
+//  カップル・夫婦向けデザイントークン（ダークモード対応）
 //
 
 import SwiftUI
 
+// MARK: - ダイナミックカラーヘルパー
+
+private extension UIColor {
+    static func sk(_ light: (CGFloat, CGFloat, CGFloat), _ dark: (CGFloat, CGFloat, CGFloat), alpha: CGFloat = 1) -> UIColor {
+        UIColor { trait in
+            let (r, g, b) = trait.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: r, green: g, blue: b, alpha: alpha)
+        }
+    }
+}
+
 // MARK: - カラーパレット
 
 extension Color {
-    // メインカラー
-    static let skRose        = Color(red: 0.96, green: 0.45, blue: 0.56)   // #F5738F ローズピンク
-    static let skRoseLight   = Color(red: 0.99, green: 0.88, blue: 0.91)   // #FCE0E8 薄ピンク
-    static let skRoseMid     = Color(red: 0.98, green: 0.70, blue: 0.76)   // #FAB2C2 ミドルピンク
-    static let skCoral       = Color(red: 0.98, green: 0.60, blue: 0.50)   // #FA9980 コーラル
-    static let skCoralLight  = Color(red: 0.99, green: 0.91, blue: 0.88)   // #FCE8E0 薄コーラル
+    // メインカラー（ブランドカラーはライト・ダーク共通）
+    static let skRose       = Color(UIColor.sk((0.96, 0.45, 0.56), (0.96, 0.45, 0.56)))  // #F5738F
+    static let skRoseLight  = Color(UIColor.sk((0.99, 0.88, 0.91), (0.21, 0.10, 0.13)))  // light: #FCE0E8 / dark: #361A21
+    static let skRoseMid    = Color(UIColor.sk((0.98, 0.70, 0.76), (0.75, 0.48, 0.58)))  // light: #FAB2C2 / dark: #C07A94
+    static let skCoral      = Color(UIColor.sk((0.98, 0.60, 0.50), (0.98, 0.60, 0.50)))  // #FA9980
+    static let skCoralLight = Color(UIColor.sk((0.99, 0.91, 0.88), (0.21, 0.11, 0.09)))  // light: #FCE8E0 / dark: #361C17
 
     // ベース・背景
-    static let skCream       = Color(red: 0.99, green: 0.97, blue: 0.95)   // #FDF8F2 クリーム
-    static let skWarmWhite   = Color(red: 1.00, green: 0.98, blue: 0.97)   // #FFFAF8 温かみのある白
-    static let skBeige       = Color(red: 0.95, green: 0.92, blue: 0.88)   // #F2EBE0 ベージュ
+    static let skCream      = Color(UIColor.sk((0.99, 0.97, 0.95), (0.11, 0.08, 0.08)))  // light: #FDF8F2 / dark: #1B1414
+    static let skWarmWhite  = Color(UIColor.sk((1.00, 0.98, 0.97), (0.15, 0.11, 0.12)))  // light: #FFFAF8 / dark: #261C1F
+    static let skBeige      = Color(UIColor.sk((0.95, 0.92, 0.88), (0.26, 0.19, 0.20)))  // light: #F2EBE0 / dark: #423031
 
     // テキスト
-    static let skTextPrimary   = Color(red: 0.25, green: 0.18, blue: 0.20) // #402E33 ウォームダーク
-    static let skTextSecondary = Color(red: 0.58, green: 0.50, blue: 0.52) // #948083 ウォームグレー
-    static let skTextTertiary  = Color(red: 0.78, green: 0.72, blue: 0.74) // #C7B7BC ライトウォームグレー
+    static let skTextPrimary   = Color(UIColor.sk((0.25, 0.18, 0.20), (0.94, 0.91, 0.92)))  // light: #402E33 / dark: #F0E8EB
+    static let skTextSecondary = Color(UIColor.sk((0.58, 0.50, 0.52), (0.64, 0.55, 0.58)))  // light: #948083 / dark: #A38D94
+    static let skTextTertiary  = Color(UIColor.sk((0.78, 0.72, 0.74), (0.42, 0.37, 0.38)))  // light: #C7B7BC / dark: #6B5E61
 
     // セマンティック
-    static let skPaid    = Color(red: 0.42, green: 0.75, blue: 0.62)       // #6BC09E グリーン
-    static let skUnpaid  = Color(red: 0.98, green: 0.60, blue: 0.50)       // コーラル（skCoral）
-    static let skShadow  = Color(red: 0.86, green: 0.70, blue: 0.74).opacity(0.25) // ピンク系シャドウ
+    static let skPaid   = Color(UIColor.sk((0.42, 0.75, 0.62), (0.36, 0.73, 0.61)))         // light: #6BC09E / dark: #5CBA9C
+    static let skUnpaid = Color(UIColor.sk((0.98, 0.60, 0.50), (0.98, 0.60, 0.50)))         // コーラル（skCoral と同値）
+    static let skShadow = Color(UIColor { t in
+        t.userInterfaceStyle == .dark
+        ? UIColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        : UIColor(red: 0.86, green: 0.70, blue: 0.74, alpha: 0.25)
+    })
 }
 
 // MARK: - カードスタイル
@@ -63,8 +78,22 @@ struct SKAvatar: View {
     private let palettes: [(bg: Color, fg: Color)] = [
         (.skRoseLight, .skRose),
         (.skCoralLight, .skCoral),
-        (Color(red: 0.88, green: 0.93, blue: 0.99), Color(red: 0.40, green: 0.65, blue: 0.95)),
-        (Color(red: 0.88, green: 0.96, blue: 0.92), .skPaid)
+        (
+            Color(UIColor { t in
+                t.userInterfaceStyle == .dark
+                ? UIColor(red: 0.12, green: 0.20, blue: 0.35, alpha: 1)
+                : UIColor(red: 0.88, green: 0.93, blue: 0.99, alpha: 1)
+            }),
+            Color(red: 0.40, green: 0.65, blue: 0.95)
+        ),
+        (
+            Color(UIColor { t in
+                t.userInterfaceStyle == .dark
+                ? UIColor(red: 0.12, green: 0.28, blue: 0.22, alpha: 1)
+                : UIColor(red: 0.88, green: 0.96, blue: 0.92, alpha: 1)
+            }),
+            .skPaid
+        )
     ]
 
     var body: some View {
