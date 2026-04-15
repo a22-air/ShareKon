@@ -25,6 +25,8 @@ struct SplitView: View {
     var category: CategoryModel
 
     private var categoryItems: [ExpenseItem] { viewModel.items }
+    // 計算対象外フラグが立っていないアイテムのみ計算に使用
+    private var calculationItems: [ExpenseItem] { viewModel.items.filter { !$0.isExcluded } }
     private var allUsers: [User] { viewModel.category.users }
     private var user0: User? { allUsers.first }
     private var user1: User? { allUsers.dropFirst().first }
@@ -40,8 +42,8 @@ struct SplitView: View {
         ]
     }
 
-    private var paidTotal: Int { categoryItems.filter { $0.isPaid }.map { $0.totalAmount }.reduce(0, +) }
-    private var unpaidTotal: Int { categoryItems.filter { !$0.isPaid }.map { $0.totalAmount }.reduce(0, +) }
+    private var paidTotal: Int { calculationItems.filter { $0.isPaid }.map { $0.totalAmount }.reduce(0, +) }
+    private var unpaidTotal: Int { calculationItems.filter { !$0.isPaid }.map { $0.totalAmount }.reduce(0, +) }
     private var total: Int { paidTotal + unpaidTotal }
 
     var body: some View {
@@ -279,15 +281,15 @@ struct SplitView: View {
         let assist = assistanceAmount
         let ratios = normalizedRatios
 
-        // 各ユーザーが実際に支払った金額を集計
+        // 各ユーザーが実際に支払った金額を集計（計算対象外アイテムは除く）
         let paidByUserTotal: [User.ID: Int] = allUsers.reduce(into: [:]) { result, user in
-            result[user.id] = categoryItems.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
+            result[user.id] = calculationItems.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
         }
         let paidByUserPaid: [User.ID: Int] = allUsers.reduce(into: [:]) { result, user in
-            result[user.id] = categoryItems.filter { $0.isPaid }.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
+            result[user.id] = calculationItems.filter { $0.isPaid }.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
         }
         let paidByUserUnpaid: [User.ID: Int] = allUsers.reduce(into: [:]) { result, user in
-            result[user.id] = categoryItems.filter { !$0.isPaid }.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
+            result[user.id] = calculationItems.filter { !$0.isPaid }.reduce(0) { $0 + ($1.userAmounts[user.id] ?? 0) }
         }
 
         // 合計: 差し引き金額を考慮してシェアを計算

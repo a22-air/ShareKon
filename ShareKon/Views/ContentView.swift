@@ -268,7 +268,19 @@ struct ExpenseRowView: View {
 
                 Spacer()
 
-                if item.isPaid {
+                if item.isExcluded {
+                    HStack(spacing: 3) {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.system(size: 10))
+                        Text("対象外")
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(.skCoral)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.skCoral.opacity(0.12))
+                    .cornerRadius(8)
+                } else if item.isPaid {
                     HStack(spacing: 3) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 10))
@@ -311,7 +323,7 @@ struct ExpenseRowView: View {
         .overlay(
             HStack {
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(item.isPaid ? Color.skPaid : Color.skCoral)
+                    .fill(item.isExcluded ? Color.skTextTertiary : (item.isPaid ? Color.skPaid : Color.skCoral))
                     .frame(width: 3)
                     .padding(.vertical, 10)
                 Spacer()

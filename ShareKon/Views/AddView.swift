@@ -51,6 +51,7 @@ struct AddView: View {
     @State private var checked = false
     @State private var selectedUsers: [User] = []
     @State private var isPaid: Bool = false
+    @State private var isExcluded: Bool = false
     @State private var draftCategories: [CategoryItem]
     @State private var draftSelectedCategory: CategoryItem?
     @ObservedObject var viewModel: CategoryViewModel
@@ -329,6 +330,27 @@ struct AddView: View {
                             .padding(2)
                         }
 
+                        // 計算対象外
+                        SKFormCard {
+                            HStack(spacing: 10) {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(isExcluded ? .skCoral : .skTextTertiary)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("計算対象外")
+                                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                        .foregroundColor(.skTextPrimary)
+                                    Text("割り勘計算から除外します")
+                                        .font(.system(size: 11, design: .rounded))
+                                        .foregroundColor(.skTextSecondary)
+                                }
+                                Spacer()
+                                Toggle("", isOn: $isExcluded)
+                                    .labelsHidden()
+                                    .tint(.skCoral)
+                            }
+                        }
+
                         Spacer(minLength: 24)
                     }
                     .padding(.horizontal, 20)
@@ -436,11 +458,12 @@ struct AddView: View {
             }
             editing.userAmounts = filteredAmounts
             editing.isPaid = isPaid
+            editing.isExcluded = isExcluded
             itemToSave = editing
         } else {
             itemToSave = ExpenseItem(
                 ownerId: uid, category: category, date: date,
-                totalAmount: total, userAmounts: amounts, isPaid: isPaid
+                totalAmount: total, userAmounts: amounts, isPaid: isPaid, isExcluded: isExcluded
             )
         }
         Task {
@@ -466,6 +489,7 @@ struct AddView: View {
         selectedCategory = item.category
         date = item.date
         isPaid = item.isPaid
+        isExcluded = item.isExcluded
         userAmounts = item.userAmounts.mapValues { String($0) }
         selectedUsers = viewModel.category.users.filter { user in
             item.userAmounts.keys.contains(user.id)
