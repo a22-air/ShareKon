@@ -190,7 +190,7 @@ struct SplitView: View {
                                     distributed: distributed["paid"] ?? [:],
                                     shares: distributed["paidShares"] ?? [:],
                                     users: viewModel.category.users,
-                                    displayedAssistanceAmount: 0,
+                                    displayedAssistanceAmount: displayedAssistanceAmount,
                                     userRatios: normalizedRatios
                                 )
                             }
@@ -202,7 +202,7 @@ struct SplitView: View {
                                     distributed: distributed["unpaid"] ?? [:],
                                     shares: distributed["unpaidShares"] ?? [:],
                                     users: viewModel.category.users,
-                                    displayedAssistanceAmount: 0,
+                                    displayedAssistanceAmount: displayedAssistanceAmount,
                                     userRatios: normalizedRatios
                                 )
                             }
