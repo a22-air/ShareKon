@@ -84,7 +84,8 @@ class CategoryViewModel: ObservableObject {
             "totalAmount": item.totalAmount,
             "userAmounts": userAmountsData,
             "isPaid": item.isPaid,
-            "isExcluded": item.isExcluded
+            "isExcluded": item.isExcluded,
+            "memo": item.memo
         ]
 
         if isNew {
@@ -146,6 +147,7 @@ class CategoryViewModel: ObservableObject {
                         userAmounts: userAmounts,
                         isPaid: data["isPaid"] as? Bool ?? false,
                         isExcluded: data["isExcluded"] as? Bool ?? false,
+                        memo: data["memo"] as? String ?? "",
                         createdAt: createdAt
                     )
                 }

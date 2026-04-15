@@ -315,6 +315,20 @@ struct ExpenseRowView: View {
                             .foregroundColor(.skTextSecondary)
                     }
                 }
+
+                if !item.memo.isEmpty {
+                    HStack(spacing: 5) {
+                        Image(systemName: "note.text")
+                            .font(.system(size: 10))
+                            .foregroundColor(.skTextTertiary)
+                        Text(item.memo)
+                            .font(.system(size: 11, design: .rounded))
+                            .foregroundColor(.skTextSecondary)
+                            .lineLimit(2)
+                        Spacer()
+                    }
+                    .padding(.top, 2)
+                }
             }
         }
         .padding(14)

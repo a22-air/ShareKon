@@ -15,6 +15,7 @@ struct ExpenseItem: Identifiable {
     var userAmounts: [UUID: Int]
     var isPaid: Bool = false
     var isExcluded: Bool = false  // 割り勘計算対象外フラグ
+    var memo: String = ""
     var createdAt: Date? // 登録順を安定させるために作成
 
     // Firestore から復元する用イニシャライザ
@@ -27,6 +28,7 @@ struct ExpenseItem: Identifiable {
         userAmounts: [UUID: Int],
         isPaid: Bool = false,
         isExcluded: Bool = false,
+        memo: String = "",
         createdAt: Date? = nil
     ) {
         self.id = id
@@ -37,6 +39,7 @@ struct ExpenseItem: Identifiable {
         self.userAmounts = userAmounts
         self.isPaid = isPaid
         self.isExcluded = isExcluded
+        self.memo = memo
         self.createdAt = createdAt
     }
 
@@ -49,6 +52,7 @@ struct ExpenseItem: Identifiable {
         userAmounts: [UUID: Int],
         isPaid: Bool = false,
         isExcluded: Bool = false,
+        memo: String = "",
         createdAt: Date? = nil
     ) {
         self.id = UUID().uuidString
@@ -59,6 +63,7 @@ struct ExpenseItem: Identifiable {
         self.userAmounts = userAmounts
         self.isPaid = isPaid
         self.isExcluded = isExcluded
+        self.memo = memo
         self.createdAt = createdAt
     }
 }

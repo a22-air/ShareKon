@@ -52,6 +52,7 @@ struct AddView: View {
     @State private var selectedUsers: [User] = []
     @State private var isPaid: Bool = false
     @State private var isExcluded: Bool = false
+    @State private var memo: String = ""
     @State private var draftCategories: [CategoryItem]
     @State private var draftSelectedCategory: CategoryItem?
     @ObservedObject var viewModel: CategoryViewModel
@@ -351,6 +352,43 @@ struct AddView: View {
                             }
                         }
 
+                        // メモ
+                        SKFormCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "note.text")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.skRose)
+                                    Text("メモ")
+                                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                        .foregroundColor(.skTextPrimary)
+                                }
+                                ZStack(alignment: .topLeading) {
+                                    if memo.isEmpty {
+                                        Text("任意でメモを入力")
+                                            .font(.system(.body, design: .rounded))
+                                            .foregroundColor(.skTextTertiary)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 14)
+                                    }
+                                    TextEditor(text: $memo)
+                                        .font(.system(.body, design: .rounded))
+                                        .frame(minHeight: 72, maxHeight: 120)
+                                        .focused($isFocused)
+                                        .scrollContentBackground(.hidden)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 6)
+                                }
+                                .background(Color.skCream)
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(Color.skRoseMid.opacity(0.5), lineWidth: 1)
+                                )
+                            }
+                            .padding(2)
+                        }
+
                         Spacer(minLength: 24)
                     }
                     .padding(.horizontal, 20)
@@ -459,11 +497,12 @@ struct AddView: View {
             editing.userAmounts = filteredAmounts
             editing.isPaid = isPaid
             editing.isExcluded = isExcluded
+            editing.memo = memo
             itemToSave = editing
         } else {
             itemToSave = ExpenseItem(
                 ownerId: uid, category: category, date: date,
-                totalAmount: total, userAmounts: amounts, isPaid: isPaid, isExcluded: isExcluded
+                totalAmount: total, userAmounts: amounts, isPaid: isPaid, isExcluded: isExcluded, memo: memo
             )
         }
         Task {
@@ -490,6 +529,7 @@ struct AddView: View {
         date = item.date
         isPaid = item.isPaid
         isExcluded = item.isExcluded
+        memo = item.memo
         userAmounts = item.userAmounts.mapValues { String($0) }
         selectedUsers = viewModel.category.users.filter { user in
             item.userAmounts.keys.contains(user.id)
