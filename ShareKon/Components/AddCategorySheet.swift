@@ -47,9 +47,7 @@ struct AddCategorySheet: View {
     ]
 
     var body: some View {
-        ZStack {
-            Color.skCream.ignoresSafeArea()
-
+        VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 20) {
 
@@ -190,41 +188,50 @@ struct AddCategorySheet: View {
                         }
                     }
 
-                    // 保存ボタン
-                    Button {
-                        isFocused = false
-                        showValidation = true
-                        guard isSaveEnabled else { return }
-                        onSave()
-                    } label: {
-                        HStack(spacing: 6) {
-                            SKHeartAccent(size: 12, color: .white)
-                            Text("保存する")
-                                .font(.system(.headline, design: .rounded).weight(.bold))
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            LinearGradient(colors: [.skRose, .skCoral],
-                                           startPoint: .leading, endPoint: .trailing)
-                        )
-                        .cornerRadius(16)
-                        .shadow(color: Color.skRose.opacity(0.35), radius: 8, x: 0, y: 4)
-                    }
-
-                    // 閉じるボタン
-                    Button(action: onClose) {
-                        Text("キャンセル")
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundColor(.skTextSecondary)
-                    }
-                    .padding(.bottom, 16)
+                    Spacer(minLength: 8)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
+                .padding(.bottom, 12)
             }
+            .background(Color.skCream)
+
+            // 保存・キャンセルボタン（常に画面下部に固定）
+            VStack(spacing: 10) {
+                Button {
+                    isFocused = false
+                    showValidation = true
+                    guard isSaveEnabled else { return }
+                    onSave()
+                } label: {
+                    HStack(spacing: 6) {
+                        SKHeartAccent(size: 12, color: .white)
+                        Text("保存する")
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(colors: [.skRose, .skCoral],
+                                       startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(16)
+                    .shadow(color: Color.skRose.opacity(0.35), radius: 8, x: 0, y: 4)
+                }
+
+                Button(action: onClose) {
+                    Text("キャンセル")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundColor(.skTextSecondary)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 28)
+            .background(Color.skCream)
         }
+        .background(Color.skCream.ignoresSafeArea())
         .contentShape(Rectangle())
         .onTapGesture { isFocused = false }
         .onAppear {
