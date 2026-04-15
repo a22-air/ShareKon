@@ -16,6 +16,8 @@ struct MainView: View {
     @State private var selectedIcon: String = "folder.fill"
     @State private var categoryToDelete: CategoryModel?
     @State private var isEditing = false
+    @State private var selectedCategories: Set<String> = []
+    @State private var showBulkDeleteAlert = false
     @State private var categoryViewModels: [String: CategoryViewModel] = [:]
     @AppStorage("hasSeenTutorial") var hasSeenTutorial = false
     @State private var showTutorial = false
@@ -43,6 +45,7 @@ struct MainView: View {
 
             if newCategories.isEmpty {
                 isEditing = false
+                selectedCategories.removeAll()
                 categoryViewModels.removeAll()
                 return
             }
@@ -82,6 +85,18 @@ struct MainView: View {
             if let category = categoryToDelete {
                 Text("「\(category.name)」とすべての支出データを削除します。この操作は取り消せません。")
             }
+        }
+        .alert("選択したカテゴリを削除", isPresented: $showBulkDeleteAlert) {
+            Button("削除", role: .destructive) {
+                let ids = selectedCategories
+                let targets = listVM.categories.filter { ids.contains($0.id) }
+                selectedCategories.removeAll()
+                isEditing = false
+                for category in targets { deleteCategory(category) }
+            }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("\(selectedCategories.count)件のカテゴリとすべての支出データを削除します。この操作は取り消せません。")
         }
         .sheet(isPresented: $showAddCategorySheet) {
             AddCategorySheet(
@@ -130,18 +145,79 @@ struct MainView: View {
 
             HStack(spacing: 10) {
                 if !listVM.categories.isEmpty {
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                            isEditing.toggle()
+                    if isEditing {
+                        // 全選択 / 全解除
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                if selectedCategories.count == listVM.categories.count {
+                                    selectedCategories.removeAll()
+                                } else {
+                                    selectedCategories = Set(listVM.categories.map { $0.id })
+                                }
+                            }
+                        } label: {
+                            Text(selectedCategories.count == listVM.categories.count ? "全解除" : "全選択")
+                                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                .foregroundColor(.skRose)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(Color.skRoseLight)
+                                .cornerRadius(20)
                         }
-                    } label: {
-                        Text(isEditing ? "完了" : "編集")
-                            .font(.system(.subheadline, design: .rounded).weight(.medium))
-                            .foregroundColor(.skRose)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background(Color.skRoseLight)
-                            .cornerRadius(20)
+
+                        // まとめて削除
+                        if !selectedCategories.isEmpty {
+                            Button {
+                                showBulkDeleteAlert = true
+                            } label: {
+                                Text("削除(\(selectedCategories.count))")
+                                    .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                    .fixedSize()
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 7)
+                                    .background(Color.skRose)
+                                    .cornerRadius(20)
+                            }
+                            .transition(.scale.combined(with: .opacity))
+                        }
+
+                        // 完了
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                isEditing = false
+                                selectedCategories.removeAll()
+                            }
+                        } label: {
+                            Text("戻る")
+                                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                .foregroundColor(.skRose)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(Color.skRoseLight)
+                                .cornerRadius(20)
+                        }
+                    } else {
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                isEditing.toggle()
+                            }
+                        } label: {
+                            Text("編集")
+                                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                .foregroundColor(.skRose)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(Color.skRoseLight)
+                                .cornerRadius(20)
+                        }
                     }
                 }
 
@@ -217,7 +293,18 @@ struct MainView: View {
     private func categoryCard(_ category: CategoryModel, index: Int) -> some View {
         Group {
             if isEditing {
-                categoryCardContent(category, index: index, showTrash: true)
+                Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                        if selectedCategories.contains(category.id) {
+                            selectedCategories.remove(category.id)
+                        } else {
+                            selectedCategories.insert(category.id)
+                        }
+                    }
+                } label: {
+                    categoryCardContent(category, index: index, showTrash: false)
+                }
+                .buttonStyle(.plain)
             } else {
                 NavigationLink { destinationView(for: category) } label: {
                     categoryCardContent(category, index: index, showTrash: false)
@@ -227,7 +314,7 @@ struct MainView: View {
         }
     }
 
-    private func categoryCardContent(_ category: CategoryModel, index: Int, showTrash: Bool) -> some View {
+    private func categoryCardContent(_ category: CategoryModel, index: Int, showTrash: Bool = false) -> some View {
         HStack(spacing: 14) {
             // アイコン
             ZStack {
@@ -271,17 +358,12 @@ struct MainView: View {
 
             Spacer()
 
-            if showTrash {
-                Button { categoryToDelete = category } label: {
-                    Image(systemName: "trash.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.skRose)
-                        .padding(9)
-                        .background(Color.skRoseLight)
-                        .cornerRadius(10)
-                }
-                .buttonStyle(.plain)
-                .transition(.scale.combined(with: .opacity))
+            if isEditing {
+                let isSelected = selectedCategories.contains(category.id)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? .skRose : .skTextTertiary)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSelected)
             } else {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
