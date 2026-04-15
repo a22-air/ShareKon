@@ -107,14 +107,14 @@ struct AddView: View {
                             }
                         }
 
-                        // 参加者選択
+                        // 支払い者選択
                         SKFormCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "person.2.fill")
                                         .font(.system(size: 13))
                                         .foregroundColor(.skRose)
-                                    Text("参加者")
+                                    Text("支払者")
                                         .font(.system(.subheadline, design: .rounded).weight(.semibold))
                                         .foregroundColor(.skTextPrimary)
                                 }
@@ -125,7 +125,7 @@ struct AddView: View {
                                         .foregroundColor(.skRose)
                                 } else {
                                     if selectedUsers.isEmpty {
-                                        Text("参加者を選択してください")
+                                        Text("支払者を選択してください")
                                             .font(.system(.caption, design: .rounded))
                                             .foregroundColor(.skRose)
                                     }
