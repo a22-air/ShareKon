@@ -9,7 +9,7 @@ struct CommonSelectView<Destination: View>: View {
     @Binding var items: [CategoryItem]
     @Binding var selectedItem: CategoryItem?
     let destination: Destination
-    var placeholder: String { "カテゴリを追加してください" }
+    var placeholder: String { "支出の項目を追加してください" }
 
     var displayText: String {
         if let selectedItem {

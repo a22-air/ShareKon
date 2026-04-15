@@ -80,9 +80,9 @@ struct AddView: View {
                 ScrollView {
                     VStack(spacing: 14) {
 
-                        // カテゴリ選択
+                        // 支出選択
                         SKFormCard {
-                            SKFormRow(icon: "tag.fill", label: "カテゴリ") {
+                            SKFormRow(icon: "tag.fill", label: "支出") {
                                 CommonSelectView(
                                     items: $draftCategories,
                                     selectedItem: $draftSelectedCategory,
