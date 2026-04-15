@@ -11,6 +11,7 @@ struct ShareWeddingCostApp: App {
     @State private var showSplash = true
 
     init() {
+        guard !ProcessInfo.isPreview else { return }
         FirebaseApp.configure()
     }
 

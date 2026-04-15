@@ -13,7 +13,7 @@ import FirebaseAuth
 class CategoryViewModel: ObservableObject {
     @Published var category: CategoryModel
     @Published var items: [ExpenseItem] = []
-    private var db = Firestore.firestore()
+    private lazy var db = Firestore.firestore()
     private var itemsListener: ListenerRegistration?
     private var listener: ListenerRegistration?
     init(category: CategoryModel) {
@@ -99,6 +99,7 @@ class CategoryViewModel: ObservableObject {
     
     // Firestore からリアルタイムで ExpenseItem を取得
     func listenItems() {
+        guard !ProcessInfo.isPreview else { return }
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
         guard itemsListener == nil else {

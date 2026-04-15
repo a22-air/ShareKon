@@ -53,6 +53,7 @@ struct MainView: View {
             }
         }
         .onAppear {
+            guard !ProcessInfo.isPreview else { return }
             _ = Auth.auth().addStateDidChangeListener { _, user in
                 if user != nil {
                     listVM.listenCategories()
@@ -289,6 +290,7 @@ struct MainView: View {
         }
         .padding(14)
         .background(Color.skWarmWhite)
+        
         .cornerRadius(20)
         .shadow(color: Color.skShadow, radius: 10, x: 0, y: 4)
         .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isEditing)

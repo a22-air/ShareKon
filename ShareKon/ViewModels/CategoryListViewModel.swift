@@ -13,7 +13,7 @@ import FirebaseAuth
 class CategoryListViewModel: ObservableObject {
     @Published var categories: [CategoryModel] = []
     
-    private var db = Firestore.firestore()
+    private lazy var db = Firestore.firestore()
     
     init() {
         guard !ProcessInfo.isPreview else { return }
@@ -80,6 +80,7 @@ class CategoryListViewModel: ObservableObject {
     
     // データ表示
     func listenCategories() {
+        guard !ProcessInfo.isPreview else { return }
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
         db.collection("categories")
