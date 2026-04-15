@@ -168,7 +168,8 @@ struct SplitView: View {
                                 SettlementSummaryCard(
                                     user0: u0,
                                     user1: u1,
-                                    balance0: distributed["total"]?[u0.id] ?? 0
+                                    balance0: distributed["total"]?[u0.id] ?? 0,
+                                    balance1: distributed["total"]?[u1.id] ?? 0
                                 )
                             }
 
@@ -300,12 +301,10 @@ struct SplitView: View {
         let paidShares = distribute(amount: paidTotal, ratios: ratios)
         let unpaidShares = distribute(amount: unpaidTotal, ratios: ratios)
 
-        // 合計のネット残高: 差し引き金額を比率に応じて按分してpaidに加算することで残高合計を0に保つ
-        // (例: assist=10,000, ratio=1:1 → 各自5,000ずつ按分クレジット)
+        // 合計のネット残高: 差し引き後の負担額 − 実際の支払額
+        // balance = (total - assist) × ratio - paidByUser
         let totalResult = allUsers.reduce(into: [User.ID: Int]()) { result, user in
-            let assistCredit = Int((Double(assist) * (ratios[user.id] ?? 0)).rounded())
-            let effectivePaid = (paidByUserTotal[user.id] ?? 0) - assistCredit
-            result[user.id] = (totalShares[user.id] ?? 0) - effectivePaid
+            result[user.id] = (totalShares[user.id] ?? 0) - (paidByUserTotal[user.id] ?? 0)
         }
 
         // 精算済み・未精算のネット残高: 差し引き金額なしで計算
@@ -337,11 +336,15 @@ private struct SettlementSummaryCard: View {
     let user0: User
     let user1: User
     let balance0: Int  // user0のネット残高（正=支払い、負=受け取り）
+    let balance1: Int  // user1のネット残高
 
+    // 差し引き金額がある場合 balance0+balance1 = -assist となるため、
+    // 実際の精算金額は「正の残高を持つ側」の値を使う
+    private var settlementAmount: Int { max(balance0, balance1) }
     private var payer: User { balance0 > 0 ? user0 : user1 }
     private var receiver: User { balance0 > 0 ? user1 : user0 }
-    private var amount: Int { abs(balance0) }
-    private var isSettled: Bool { balance0 == 0 }
+    private var amount: Int { settlementAmount }
+    private var isSettled: Bool { settlementAmount <= 0 }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -515,18 +518,22 @@ private struct CategorySplitView: View {
                             Text("¥\(share)")
                                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                                 .foregroundColor(.skTextPrimary)
-                            Text("¥\(balance) 支払い")
-                                .font(.system(size: 11, design: .rounded).weight(.medium))
-                                .foregroundColor(.skRose)
+                            if displayedAssistanceAmount == 0 {
+                                Text("¥\(balance) 支払い")
+                                    .font(.system(size: 11, design: .rounded).weight(.medium))
+                                    .foregroundColor(.skRose)
+                            }
                         }
                     } else if balance < 0 {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("¥\(share)")
                                 .font(.system(.subheadline, design: .rounded).weight(.bold))
                                 .foregroundColor(.skTextPrimary)
-                            Text("¥\(abs(balance)) 受け取り")
-                                .font(.system(size: 11, design: .rounded).weight(.medium))
-                                .foregroundColor(.skPaid)
+                            if displayedAssistanceAmount == 0 {
+                                Text("¥\(abs(balance)) 受け取り")
+                                    .font(.system(size: 11, design: .rounded).weight(.medium))
+                                    .foregroundColor(.skPaid)
+                            }
                         }
                     } else {
                         VStack(alignment: .trailing, spacing: 2) {
